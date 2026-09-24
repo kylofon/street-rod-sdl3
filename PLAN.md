@@ -75,7 +75,11 @@ CMake + SDL3, adapted from `td3port`: EXE loader (EXEPACK in C), `mem.h` memory 
 pointers, generated `symbols.h`, `PORTING.md`. Headless test path (`SDL_VIDEO_DRIVER=dummy`,
 snapshot dir, scripted keys).
 
-### 5. Port, subsystem by subsystem
+### 5. Port, subsystem by subsystem — first full integration running (2026-09-25)
+All subsystems ported (platform, video, sound, game_flow, garage + UI toolkit, race); the whole
+game links warning-free. Headless demo mode (`srport --game-dir Game demo`) runs title → licence →
+newspaper → used cars → garage → drive → gas station → garage → engine bay. Next: compare with
+DOSBox captures, play-test every screen, fix differences.
 platform/video → title and garage screens (the mouse-driven menus: a visible milestone) → shops,
 newspaper, save/load → drag race → road race / town → sound. Each step checked against DOSBox
 captures of the original (`DOSBOX/`, ignored) and headless snapshots.

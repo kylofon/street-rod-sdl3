@@ -15,6 +15,9 @@ func,0000:04f4,video_mode_set,near void (int mode),platform,,BIOS mode 0Dh for E
 func,0000:05c6,cpu_speed_calibrate,near int (void),platform,,polls 0040:006C during one BIOS tick; /95/10; min 1 -> DS:8ACC
 func,0000:0659,slow_flag_set,near void (void),platform,,DS:82C6 = DS:8ACC < 4
 func,0000:066f,main,far void (int argc; char **argv),platform,,"switches 1/nomouse/demo/auto/nouemem, init, resident pictures, game_loop, exit | switches 1/nomouse/demo/auto/nouemem; init; game loop 0000:503f"
+func,0000:08b4,classifieds_open,"void(int *list, int item)",garage,,ad pages (garage)
+func,0000:09b7,classifieds_pic,Desc far *(int pool),garage,,ad page picture 0x403
+func,0000:09cb,classifieds_run,int(void),garage,,ad pages: draw and wait
 func,0000:0d58,hotspots_reset,far void (void),platform,,0f38:a054 + clears DS:051A-051E + 0f38:4ba1(1)
 func,0000:0d78,click_clear,far void (void),platform,ui_request_redraw,"clears click events and discards the key slot | sets DS:6C4A=1, 8B92=-1, 8BAA=7D00h, clears 4736/4737, flushes key; see game_flow"
 func,0000:0d99,music_stop,far void (void),platform,,"see sound | stop current song, gate off, jukebox button label 'Catch some tunes'"
@@ -40,6 +43,7 @@ func,0000:1bae,demo_step,far void (void),platform,,"demo autoplayer from the tim
 func,0000:1fe2,timer_isr,interrupt,platform,,INT 8 at 72.8 Hz: ticks; BIOS every 4th; demo; music; key/joystick cursor 1 px per tick
 func,0000:2374,race_ctrl_reset,far void (void),platform,race_stop_inputs,clears DS:05D6/78E2/78E4/78F4/78F6; DS:799E=DS:79A0; see race
 func,0000:238c,race_isr,interrupt,platform,isr_drive timer_isr_race,INT 8 while driving: ticks; BIOS every 4th; engine sound; control step every 12th tick (6.07 Hz); see race/sound | sound + player physics every 12th tick (physics from 0000:253b); see platform/sound | INT 8 while driving: engine/siren/squeal sound + car physics (race)
+func,0000:253b,race_phys_step,far void(),race,,player physics step of race_isr 0000:238c (from 253b to the iret); modules.race_phys_step
 func,0000:2b9a,bios_mode_a_set,far void (u8 equip; u8 mode),platform,,no callers
 func,0000:2bad,bios_mode_b_set,far void (u8 equip; u8 mode),platform,,no callers
 func,0000:2bc0,bios_mode_a_apply,far void (void),platform,,equipment bits + INT 10h AH=0; no callers
@@ -227,14 +231,23 @@ func,0f38:180c,pal_reg12_13,far void (void),video,,ega_set_palreg(0Ch; 0Dh)
 func,0f38:181c,pal_shadow_patch,far void (void),video,,DS:0446..0448 = 09 01 03 (no hardware write)
 func,0f38:182c,pal_shadow_swap,far void (void),video,,swap 17 bytes DS:0440 <-> DS:0462
 func,0f38:1859,gfx_init,far void (Desc far *a; Desc far *b),video,,"pages, mode constants DS:8236-823E, colour scheme, page table DS:7316"
+func,0f38:19ec,anim_stop,void(int id),garage,,UI animation scripts
+func,0f38:1a5f,anim_set_params,void(void),garage,,UI animation scripts (near)
+func,0f38:1abd,anim_run,void(int slot),garage,,UI animation scripts (near)
+func,0f38:1dc9,anim_start,int(int id),garage,,UI animation scripts
+func,0f38:1e41,anim_tick,void(int id),garage,,UI animation scripts: tick timer callback
+func,0f38:1e72,anim_active,int(int id),garage,,UI animation scripts
+func,0f38:1e93,anim_blink_led,"int(Anim *a, Step *p)",garage,,UI animation scripts: lamps of animation 2
 func,0f38:1f4b,ega_set_palreg,far void (int reg; int colour),video,,waits for vretrace; INT 10h AX=1000h; see video | waits for retrace; INT 10h AX=1000h/1001h via int86x; shadow DS:0440
 func,0f38:1fa4,ega_set_palette,far void (u8 *pal16),video,,INT 10h AX=1002h via int86x; values >= 8 get |10h; see video | INT 10h AX=1002h (16 + overscan DS:8248); values > 7 get |10h
 func,0f38:2022,status_init,far void (int y),video,,"status line at row y: DS:8252 = y+1, 8254 = A0h, 8250 = 58h; scheme +37h..+3Bh; clears 320x10"
 func,0f38:20a1,status_print,far void (int x; char *s; int w),video,,status-line text; x < 0 centred in w (0 = DS:8254) from DS:8250
 func,0f38:21c0,money_add,far void(int),race,,money += sign-extended 16-bit delta; redraw bankroll
 func,0f38:2213,status_label,far void (char *s),video,,"label at x = 0 in the status line, then the bankroll (money_add(0)) unless s[1] is 'G' or ' '"
-func,0f38:22e9,gear_label,far void(int),race,,
+func,0f38:22e9,gear_label,far void(int),race,,status line gear letter DS:0482[i] at x DS:8258
 func,0f38:231a,screen_fill_rect,far void (int x; int y; int w; int h; u8 c),video,,"page B + mirror, pointer hidden"
+func,0f38:239c,dialog_msg,void(char *s),garage,,UI: text into DS:291F + dialog 0x1D
+func,0f38:23ce,fatal_message,void(char *s),garage,,"UI: ""Hit Return when ready"" box"
 func,0f38:2554,show_picture,far void (int id; int clr),video,,"pic_get(id, 2) to page B at (DS:04BE, DS:04C0), clipped to DS:04C2 rows; clr >= 0 clears first; mirror; arena_pop(1)"
 func,0f38:2638,show_picture_at,far void (int id; int x; int y; int clr),video,,DS:04BE = x; DS:04C0 = y; show_picture
 func,0f38:2656,screen_text,far void (int x; int y; char *s),video,,slot 3 on page B + mirror
@@ -242,6 +255,9 @@ func,0f38:26a4,screen_hline,far void (int x; int y; int w),video,,hline on page 
 func,0f38:26f2,screen_save_rect,far Desc far *(int x; int y; int w; int h; Desc far *dst),video,,page B rect into a bitmap
 func,0f38:27ef,screen_put_bitmap,far void (Desc far *b; int x; int y),video,,bitmap to page B
 func,0f38:2853,screen_put_bitmap_mirror,far void (Desc far *b; int x; int y),video,,bitmap to page B + mirror
+func,0f38:28a4,msg_draw,void(int id),garage,,UI: message box picture + text
+func,0f38:2a62,msg_draw_at,"void(int id, int x, int y)",garage,,UI: message box at a position
+func,0f38:2adf,msg_erase,void(void),garage,,UI: remove the message box
 func,0f38:2b1c,cursor_shape_offset,far u16 (int n),video,,n * DS:7B06
 func,0f38:2b28,cursor_init,far void (void),video,,"8 pre-shifted pointer copies from picture 2, save-under at A000:1F40, DS:8247=2"
 func,0f38:2d7e,cursor_ctl,far void (int op),video,,op >= 0 shape; -1/-2 show; -3/-4 hide (DS:4733); see video | op >= 0 shape; -1/-2 show (-2 also page A); -3/-4 hide (DS:4733)
@@ -251,24 +267,44 @@ func,0f38:31a5,trans_bolt_remove_anim,void(int bolt),garage,,(prov.)
 func,0f38:32ce,trans_slide_anim,"void(int pic, int reject)",garage,,(prov.)
 func,0f38:3404,trans_remove_anim,"void(int pic, int mode)",garage,,(prov.)
 func,0f38:345b,trans_screen_draw,"void(int pic, char *bolts, ...)",garage,,(prov.)
+func,0f38:34fb,bay_engine_idx,int(void),garage,,engine bay (near)
+func,0f38:351c,bay_carb_pos,"int(int *x, int *y)",garage,,engine bay (near)
+func,0f38:3589,bay_part_pos,"void(int *x, int *y)",garage,,engine bay
+func,0f38:35e4,bay_bolt_pos,"void(int *x, int *y)",garage,,engine bay
 func,0f38:3697,bay_bolt_draw,void(int pic),garage,,(prov.) engine bay
 func,0f38:37fc,bay_bolt_remove_anim,void(void),garage,,(prov.)
+func,0f38:3951,bay_carb_overlay,void(void),garage,,engine bay (near)
 func,0f38:3a58,bay_part_in_anim,"void(int pic, int reject)",garage,,(prov.)
 func,0f38:3c19,bay_part_out_anim,"void(int pic, int mode)",garage,,(prov.)
 func,0f38:3d1c,bay_connector_draw,void(void),garage,,(prov.) uses DS:82AC
 func,0f38:3e35,bay_draw_car,void(CAR*),garage,,(prov.)
 func,0f38:3f2d,bay_draw_parts,"void(int *tbl, int *bolts, int own)",garage,,(prov.)
+func,0f38:404b,hot_insert,"void(rec *base, rec *r, int n)",garage,,engine bay hot spots (near)
 func,0f38:40ca,bay_draw_bolts,"void(int *tbl, int *bolts)",garage,,(prov.)
+func,0f38:4265,ui_sort_records,"void(int first, int n)",garage,,UI: sort screen records by x0
 func,0f38:4302,fill_rect,far void (Desc far *d; int x; int y; int w; int h),video,,horizontal lines via slot 12 in DS:8244
 func,0f38:439c,vline,far void (Desc far *d; int x; int y; int h),video,,slot 12 in DS:8245
 func,0f38:43ff,hline,far void (Desc far *d; int x; int y; int w),video,,fill_rect in DS:8245
 func,0f38:4432,draw_frame3,far void (Desc far *d; int x; int y; int w; int h),video,,3-px frame outside the rect; style DS:8246
 func,0f38:45d7,draw_box1,far void (Desc far *d; int x; int y; int w; int h),video,,1-px outline outside the rect
+func,0f38:465e,ui_draw_records,void(rec*),garage,,UI: draw a screen record (chain while DS:07A8=FFFF)
+func,0f38:4a66,ui_push,void(int screen),garage,,UI: open a hot-spot screen (stack of 4)
+func,0f38:4ba1,ui_pop,void(int redraw),garage,,UI: close the top screen
+func,0f38:4bff,ui_state_reset,void(void),garage,,UI: clear the screen stack state
+func,0f38:4c1a,ui_bounds,"void(int screen, int *x, int *y, int *w, int *h)",garage,,UI: bounding box of a screen
+func,0f38:4d10,ui_save_bg,"Desc far *(int screen, int *x, int *y, int pool)",garage,,UI: save the background under a screen
+func,0f38:4dad,hotspot_at,"int(int x, int y)",garage,,UI: hot-spot code under a point
+func,0f38:4ec1,ui_dialog,int(int screen),garage,,UI: save bg + ui_menu + restore
+func,0f38:4f14,ui_menu,int(int screen),garage,,UI: push / wait / pop
 func,0f38:4f4f,list_box,"far int(int scr, int sel, int *xoff, int *list, char *wear, char **extra)",garage,,"save background, list_box_run, restore; 0x3EA if the list is empty"
 func,0f38:4fc1,wear_text,char*(int pct),garage,,'(`new`)' or '(NN% worn)' built in DS:07AA
 func,0f38:500e,list_box_run,far int(...),garage,,"scrolling list: row click selects (DS:8BA0), -7..-10 scroll, -6 edit, other negative codes return"
 func,0f38:590b,list_selected,far int(void),garage,,returns DS:8BA0
+func,0f38:5910,text_input,"int(int x, int y, char *buf, int maxlen)",garage,,UI: line editor
+func,0f38:5d37,prompt_number,"int(int x, int y, char *label, uint *v)",garage,,UI: numeric prompt (no callers)
 func,0f38:5da7,edit_number,"far int(uint *v, char *buf)",garage,,numeric edit field through 0f38:5910; *v = atoi(buf)
+func,0f38:5e1e,ui_edit_number,"int(int screen, uint *v)",garage,,UI (no callers)
+func,0f38:5e54,ui_edit,"int(int screen, int maxlen, char *buf)",garage,,UI: text field of a screen
 func,0f38:5eb6,rnd,far int (int n),platform,rand,Wichmann-Hill; n <= 0 seeds from time() and returns -1 | three combined LCGs; n<=0 reseeds
 func,0f38:6016,lib_seek,far int (int handle; long pos),platform,,intdos AX=4200h
 func,0f38:6057,pic_index,near int (int id),platform,,id >= 1000 -> id-991 else id-1; CGA remap DS:07C6
@@ -334,8 +370,15 @@ func,0f38:7a47,mouse_poll,far void (void),platform,,mickey accumulators >> shift
 func,0f38:7b22,race_run,far int(),race,,cruise/race frame loop
 func,0f38:8126,ega_blit_4planes,near,video,,garage: per plane SEQ2/GC4 + 2595:0004
 func,0f38:819a,ega_vram_cache_strips,near,video,,garage: strips cached in page DS:731E (write mode 2 fill; 21a0:1e2d)
+func,0f38:84be,car_strip_setup,"void(Desc far *bg, Desc far **bgsrc, int smoke, Desc far **bg_out, int top, int h, int **ov0, int **ov1)",garage,,car pictures
+func,0f38:872e,pump_overlay,"void(int x, int dy, int carx, int y, Desc far *dst, int pic_a, int pic_b)",garage,,car pictures (near)
 func,0f38:8866,car_compose,far void(...),garage,,base picture + roof/scoop/bumper overlays (DS:8DF0) + sticker + driver + wheels
 func,0f38:8e48,car_draw,"far void(int mode, int model, int flags, int sticker, int driver, int y, int smoke, int *tyre_pics)",garage,,"2 leave gas station, 3 parked, 4 drive in, 6 drive out, 7 See it, 8 after customising"
+func,0f38:975b,walker_anim,"void(Desc far *pic, int sx, int sy, int w, int h, int dx, int y, int base)",garage,,rows of a picture into the car strip DS:5A0A (race provisional name)
+func,0f38:985c,carhop_frames,"void(Desc far **frames, int mode)",garage,,Bob's car-hop (near)
+func,0f38:990f,carhop_strip,void(Desc far **d),garage,,Bob's car-hop (near)
+func,0f38:99d9,carhop_anim,"void(int mode, int opp)",garage,,Bob's car-hop walks in / away
+func,0f38:9e5d,town_bg_save,void(void),garage,,car pictures
 func,0f38:9ebc,arena_clear,far void (void),platform,,"arena bookkeeping reset: DS:7B14 = DS:8F00 = DS:8B02 = 0, DS:7D80 = 3Ch, DS:78DE = DS:8B7A = 65000, DS:0294 = 0"
 func,0f38:9ee9,arena_init,far void (void),platform,,DS:6CD0 = far_alloc(65000)
 func,0f38:9f1a,arena_low_shrink,far void (int n),platform,,DS:8B02[DS:7B14] -= n
@@ -350,6 +393,10 @@ func,0f38:a198,rect_clip_to_view,far i16 *(int x; int y; int w; int h; i16 *out)
 func,0f38:a1ee,rect_clip_make,far void (int w; int h; int x; int y; int maxw; int maxh; i16 *out),video,,aligned clipped rect
 func,0f38:a273,sprite_scene_setup,far void *(...),video,,builds the animation lists DS:77BA / 7D18-7D52
 func,0f38:a4b9,rect_subtract_edge,far i16 *(i16 *a; i16 *b; i16 *out; int horiz),video,,dirty strip of b not covered by a
+func,0f38:a5a5,anim_ring_reverse,void(Anim *a),garage,,sprite scenes
+func,0f38:a65d,anim_phase_set,"void(Anim *a, int i, int count, int dx, int dy)",garage,,sprite scenes
+func,0f38:a6ad,anim_phases,"void(Anim *a, int mode, int d1, int d2, int d3, int dist, int p1, int p2)",garage,,sprite scenes
+func,0f38:a7ee,anim_script,"void(Anim *a, int mode, int dist)",garage,,sprite scenes
 func,0f38:aa37,sprite_anim_advance,far void (Anim *a),video,,frame step of ega_anim_step animations
 func,0f38:aac2,sprite_hspan_clip,far int (int x; int w; Anim *a; i16 *out),video,,tile overlap for ega_anim_step
 func,0f38:ab50,bitmap_copy_into,far void (Desc far *s; Desc far *d; int flags),video,,init d like s then copy
@@ -364,6 +411,8 @@ func,0f38:b41b,mask_and_rect,far void (Desc far *s; Desc far *d; Rect *r),video,
 func,0f38:b502,far_memcpy,far void (void far *src; void far *dst; u16 n),video,,movedata
 func,0f38:b51e,bitmap_extract,far Desc far *(Desc far *s; i16 *r; int pool),video,,sub-rect into a new bitmap (slot 0 flags 3)
 func,0f38:b5aa,page_copy_rect,far void (Desc far *s; Desc far *d; int x0; int y0; int x1; int y1),video,,inclusive byte-aligned rect via slot 0
+func,0f38:b632,tc_wheel_strip,Desc far *(int x),garage,,tyre change (near)
+func,0f38:b82c,tc_wheel_swap,"void(int x, int *old, int *new)",garage,,tyre change (near)
 func,0f38:be93,tire_change_anim,"far void(int *old_pics, int *new_pics)",garage,,tyre swap animation
 func,1e16:001e,_astart,,seed,,"MSC 5.1 runtime, matches TD2 13a8:03f8 (0.99)"
 func,1e16:00e4,_cinit,,seed,,"MSC 5.1 runtime, matches TD2 13a8:04be (1.00)"
@@ -552,6 +601,7 @@ global,DS:02D4,pal_intro_tab,u8[16],video,,title sequence palette
 global,DS:02E6,g_saved_page_b,far Desc*,video,,gfx_screen_mode(0)
 global,DS:02EA,g_saved_page_a,far Desc*,video,,gfx_screen_mode(0)
 global,DS:031E,wheel_knob_xy,u8[49][2],race,,index -24..24
+global,DS:0350,wheel_idx_shown,i16,race,,wheel picture index shown by wheel_draw 0f38:1130
 global,DS:036E,shifter_tab,10-byte[3],race,,
 global,DS:03A0,g_scheme_ega,u8[],video,,colour schemes (5 bytes each from +5); DS:787E points here on EGA/Tandy
 global,DS:03F0,g_scheme_cga,u8[],video,,colour schemes for CGA/Hercules
@@ -593,8 +643,14 @@ global,DS:0692,pal_protect_tab,u8[16],video,,copy-protection screen palette (000
 global,DS:0698,pal_cycle,u8[3],platform,,colours rotated through palette registers 6-8
 global,DS:06A4,demo_quit_done,u16,platform,,
 global,DS:06A6,demo_fast,u8,platform,,
+global,DS:06A7,demo_waiting,u8,game_flow,,demo_step: the pointer is still gliding to the target element
+global,DS:06A8,demo_cycle,i16,game_flow,,demo_step: garage key cycle position
+global,DS:06AA,demo_prev_screen,i16,game_flow,,demo_step: screen of the previous injected key
+global,DS:06AC,demo_06ac,i16,game_flow,,demo_step: reset of demo_cycle in the garage (never set by game_flow)
 global,DS:06AE,demo_cursor_x,i16,platform,,
 global,DS:06B0,demo_cursor_y,i16,platform,,
+global,DS:06B2,demo_script_pos,i16,game_flow,,demo_step: position in the key script DS:06B4 (screen 0x14)
+global,DS:06B4,demo_script,i16[],game_flow,,"key indices for screen 0x14, 2 restarts"
 global,DS:06E0,isr_cursor_busy,u8,platform,,
 global,DS:06E2,vib_countdown,u16,sound,,ticks to next vibrato step
 global,DS:06E4,siren_count,u16,sound,,siren tone counter 0..20
@@ -638,9 +694,12 @@ global,DS:473E,click2_y,i16,platform,,
 global,DS:4740,kbd_dir_lock,i16,platform,keys_idle,
 global,DS:4742,cursor_hot_x,i16,platform,,
 global,DS:4744,cursor_hot_y,i16,platform,,
+global,DS:4746,race_saved_cursor_x,i16,race,,"DS:472A saved by phys_reset, restored by drive_run"
+global,DS:4748,race_saved_cursor_y,i16,race,,"DS:472C saved by phys_reset, restored by drive_run"
 global,DS:474C,step_x,i16[3] indexed -1..1,platform,,
 global,DS:4752,step_y,i16[3] indexed -1..1,platform,,
 global,DS:4766,kbd_xlat,u8[57h],platform,,scan code -> key code; negative = direction
+global,DS:47CC,demo_scancode,u8,game_flow,,scan code demo_step injects through kbd_inject_scancode (bit 7 = release)
 global,DS:47CD,click_edge,u8,platform,shift_request,
 global,DS:47CE,sound_on,u8,platform,snd_enabled,"Ctrl toggles | master sound switch, Ctrl toggles, init 1"
 global,DS:47CF,speaker_on,u8,platform,spk_gate,"1 after port 61h |= 3, 0 after &= FCh"
@@ -664,6 +723,7 @@ global,DS:49D2,TRANS_PICS,i16[4],garage,,
 global,DS:49E0,list_items,i16[],game_flow,list_buf,"count + message ids for list menus | [0] count, [1..] text ids"
 global,DS:4B62,protect_table,u8[51*2],game_flow,,"page, colour"
 global,DS:4BC8,pal_cycle_on,u16,platform,,
+global,DS:4BCA,hall_row_y,i16[10],game_flow,,hall of fame text rows 0x3B + 11 i
 global,DS:4BEE,msg_no_memory,char[],platform,,
 global,DS:4C14,g_vram_pool_base,far ptr,video,vram_pool_base,A000:0000 | A000:0000
 global,DS:4C18,g_vram_pool_used,u16[4],video,vram_pool_used,bytes used per plane in the picture cache (from A000:7D00)
@@ -679,13 +739,20 @@ global,DS:4F0E,decode_alloc,u16,platform,,
 global,DS:4F3A,hall_name,char[],platform,,?:hall_dat
 global,DS:4F46,switch_old,CAR*,garage,,
 global,DS:4F48,switch_new,CAR*,garage,,
+global,DS:4F4A,car_cache_valid,i16,game_flow,,cleared by game_loop after a game over
 global,DS:4F4C,game_pics_freed,i16,game_flow,,set by ending_sequence
 global,DS:4F4E,NEWS_PICS,i16[5],garage,,LIB2 #22-26
 global,DS:4F58,headline,i16,game_flow,news_pic,newspaper headline 0..4
 global,DS:4F5A,headline_day,i16,game_flow,news_day,day the headline was chosen
 global,DS:4FC2,slot_present,u8[16],game_flow,,slot n present -> n
 global,DS:4FD4,slot_text,u16[15],game_flow,,message ids of the slot labels
+global,DS:4FF2,msg_need_name,u16,game_flow,,near char* ';The game must have a name !'
+global,DS:4FF4,geek_index,i16,game_flow,,opponent that becomes 'The Geek' in demo mode (0)
+global,DS:4FF6,save_name_tmpl,char[13],game_flow,,"':HOTROD' 0 '.SAV' 0 (also at DS:5003, DS:5010)"
 global,DS:5030,TYRE_PICS,i16[3][4],garage,,
+global,DS:5048,cal_x0,i16,game_flow,,calendar: x of Sunday (0x21)
+global,DS:504A,cal_y0,i16[4],game_flow,,calendar: y of the first row per month
+global,DS:5052,cal_row0,i16[4],game_flow,,calendar: week row of the month's first row
 global,DS:5082,MONTH_NAME,char*[4],garage,,
 global,DS:50C2,car_colour_pairs,u8[][2],race,PAINT,EGA palette values for registers 6/7
 global,DS:5126,manifold_carbs,i16[8],race,CARBS_PER_MANIFOLD,1 1 3 2 2
@@ -695,13 +762,22 @@ global,DS:5148,BAY_LAYOUT,i16[6][6],garage,,
 global,DS:5184,BOLT_CTX,i16[],garage,,
 global,DS:518C,bay_layout_cur,i16[6],garage,,
 global,DS:5198,BOLT_SIDE,i16[],garage,,
+global,DS:51AC,opp_pal_saved,u8[2],race,,palette regs 0Ch/03h saved by opp_palette_set (FFh = none)
 global,DS:51D8,cruise_accel,i16[6],race,,
 global,DS:51E2,cruise_ratio,i16[6],race,,
 global,DS:51EC,skip_fx,i16,race,,
 global,DS:51F8,last_pick,i16,race,,
+global,DS:526A,end_face0,u8[6],game_flow,,"ending: first face frame {sx, sy, w, h, dx, dy}"
+global,DS:5270,end_faces,u8[19*6],game_flow,,ending: girlfriend face frames
+global,DS:52E2,end_lips,u8[9*6],game_flow,,ending: lips frames
+global,DS:5318,end_pics1,i16[],game_flow,,ending picture list
+global,DS:5328,end_pics2,i16[],game_flow,,ending picture list
 global,DS:53E6,stats_done,i16,race,,
 global,DS:54B2,tire_slip_tab,i16[3][5],race,,
 global,DS:54D0,ai_steps_done,i16,race,,
+global,DS:54D2,ai_yield_toggle,i16,race,,race_step: the opponent yields every 2nd push
+global,DS:54D6,ai_in_curve,i16,race,,opp_ai: braked once for the current curve
+global,DS:54D8,ai_alongside_count,i16,race,,race_step: frames right beside the opponent
 global,DS:54DA,ai_brake,i16,race,,
 global,DS:54DC,gear_spread,i16[4][5],race,,
 global,DS:5504,eng_torque,i16[3][5],race,,
@@ -730,8 +806,10 @@ global,DS:58DC,siren_on,u16,sound,siren,police siren while driving
 global,DS:58DE,pulse3_ptr,u16,sound,,dead 2196:001d
 global,DS:58E0,pulse3_delay,u16,sound,,dead 2196:001d
 global,DS:58E2,delay_scale,u16,sound,,delay() scale from snd_calibrate_delay
+global,DS:58E4,race_cga_dbl,i16,race,,CGA double buffer during race_run (0 on VGA)
 global,DS:58E6,has_clock,u16,race,,
 global,DS:58E8,wheel_pics,i16[3],race,,
+global,DS:58EE,race_run_passes,i16,race,,race_run set-up loop counter (1 on VGA)
 global,DS:5A0E,anim_engine_snd,u16,sound,,1 while 0f38:8e48 runs; see video
 global,DS:5AEE,saved_bios_mode,u8,platform,,
 global,DS:5AF0,saved_equip,u8,platform,,
@@ -777,11 +855,15 @@ global,DS:691A,g_font_seg2,u16,video,,font segment 0e9f (font_string_width)
 global,DS:691C,picdir_seg,u16,platform,,389b
 global,DS:6A2A,g_font_seg,u16,video,,font segment 0e9f (ega_draw_text)
 global,DS:6A2C,seg389b_centre,u16,race,,const 0x389B (also 6A2E..6A38)
+global,DS:6C28,wheel_pic_ptrs,far Desc*[3],race,,steering wheel pictures loaded by wheel_load
+global,DS:6C34,shifter_rec,near*,race,,current shifter record DS:036E+10*i
+global,DS:6C36,shifter_pos,i16,race,,knob position shown (-1 none)
 global,DS:6C46,cursor_drawn_x,i16,platform,,
 global,DS:6C48,cursor_drawn_y,i16,platform,,
 global,DS:6C4A,cursor_moved,u8,platform,,
 global,DS:6C4C,screen_id,u16,platform,,
 global,DS:6C4E,last_click_code,u8,platform,,
+global,DS:6C50,demo_pick,i16,game_flow,,demo_step: chosen key index
 global,DS:6C52,vib_amount,u16,sound,,((depth*note)&FFFFh)/1000
 global,DS:6C54,vib_last_div,u16,sound,,last vibrato divisor (write-only)
 global,DS:6C5E,hall_new_score,i16,game_flow,,
@@ -807,6 +889,7 @@ global,DS:6CB0,opp_v80,i16,race,,
 global,DS:6CB2,opp_v70,i16,race,,
 global,DS:6CB4,opp_skill,i16,race,,
 global,DS:6CB6,opp_lat_target,i16,race,,
+global,DS:6CB8,opp_band_tmp,u16,race,,"opponent band index temp (d1de, d29d, cf5c)"
 global,DS:6CBA,opp_shift_rpm,i16,race,,
 global,DS:6CD0,arena,far ptr,platform,,65000 bytes
 global,DS:6DFE,build_yaw,s16,race,,heading while building
@@ -968,6 +1051,7 @@ global,DS:82C6,slow_machine,u16,platform,slow_cpu,race_render.md name: easy_mode
 global,DS:82C8,pct_covered,i16,race,,
 global,DS:82CA,hall_records,u8[230],platform,hall,name[16] + hours[7] | 10 x 23 bytes
 global,DS:83B0,car_pool,u8[16*0x28],game_flow,,car records | 0x28 bytes each
+global,DS:8630,gear_label_shown,i16,race,,gear label cache of race_step (-1 = redraw)
 global,DS:8632,player_ahead,u16,race,,
 global,DS:8634,seg_right_ptr,far u16*,race,,&R[seg]
 global,DS:8638,mir_y,s16[8],race,,mirror road y

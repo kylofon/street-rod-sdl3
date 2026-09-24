@@ -21,6 +21,7 @@
 #define DS_g_saved_page_b                            0x02E6  /* video, far Desc* */
 #define DS_g_saved_page_a                            0x02EA  /* video, far Desc* */
 #define DS_wheel_knob_xy                             0x031E  /* race, u8[49][2] */
+#define DS_wheel_idx_shown                           0x0350  /* race, i16 */
 #define DS_shifter_tab                               0x036E  /* race, 10-byte[3] */
 #define DS_g_scheme_ega                              0x03A0  /* video, u8[] */
 #define DS_g_scheme_cga                              0x03F0  /* video, u8[] */
@@ -62,8 +63,14 @@
 #define DS_pal_cycle                                 0x0698  /* platform, u8[3] */
 #define DS_demo_quit_done                            0x06A4  /* platform, u16 */
 #define DS_demo_fast                                 0x06A6  /* platform, u8 */
+#define DS_demo_waiting                              0x06A7  /* game_flow, u8 */
+#define DS_demo_cycle                                0x06A8  /* game_flow, i16 */
+#define DS_demo_prev_screen                          0x06AA  /* game_flow, i16 */
+#define DS_demo_06ac                                 0x06AC  /* game_flow, i16 */
 #define DS_demo_cursor_x                             0x06AE  /* platform, i16 */
 #define DS_demo_cursor_y                             0x06B0  /* platform, i16 */
+#define DS_demo_script_pos                           0x06B2  /* game_flow, i16 */
+#define DS_demo_script                               0x06B4  /* game_flow, i16[] */
 #define DS_isr_cursor_busy                           0x06E0  /* platform, u8 */
 #define DS_vib_countdown                             0x06E2  /* sound, u16 */
 #define DS_siren_count                               0x06E4  /* sound, u16 */
@@ -107,9 +114,12 @@
 #define DS_kbd_dir_lock                              0x4740  /* platform, i16 */
 #define DS_cursor_hot_x                              0x4742  /* platform, i16 */
 #define DS_cursor_hot_y                              0x4744  /* platform, i16 */
+#define DS_race_saved_cursor_x                       0x4746  /* race, i16 */
+#define DS_race_saved_cursor_y                       0x4748  /* race, i16 */
 #define DS_step_x                                    0x474C  /* platform, i16[3] indexed -1..1 */
 #define DS_step_y                                    0x4752  /* platform, i16[3] indexed -1..1 */
 #define DS_kbd_xlat                                  0x4766  /* platform, u8[57h] */
+#define DS_demo_scancode                             0x47CC  /* game_flow, u8 */
 #define DS_click_edge                                0x47CD  /* platform, u8 */
 #define DS_sound_on                                  0x47CE  /* platform, u8 */
 #define DS_speaker_on                                0x47CF  /* platform, u8 */
@@ -133,6 +143,7 @@
 #define DS_list_items                                0x49E0  /* game_flow, i16[] */
 #define DS_protect_table                             0x4B62  /* game_flow, u8[51*2] */
 #define DS_pal_cycle_on                              0x4BC8  /* platform, u16 */
+#define DS_hall_row_y                                0x4BCA  /* game_flow, i16[10] */
 #define DS_msg_no_memory                             0x4BEE  /* platform, char[] */
 #define DS_g_vram_pool_base                          0x4C14  /* video, far ptr */
 #define DS_g_vram_pool_used                          0x4C18  /* video, u16[4] */
@@ -148,13 +159,20 @@
 #define DS_hall_name                                 0x4F3A  /* platform, char[] */
 #define DS_switch_old                                0x4F46  /* garage, CAR* */
 #define DS_switch_new                                0x4F48  /* garage, CAR* */
+#define DS_car_cache_valid                           0x4F4A  /* game_flow, i16 */
 #define DS_game_pics_freed                           0x4F4C  /* game_flow, i16 */
 #define DS_NEWS_PICS                                 0x4F4E  /* garage, i16[5] */
 #define DS_headline                                  0x4F58  /* game_flow, i16 */
 #define DS_headline_day                              0x4F5A  /* game_flow, i16 */
 #define DS_slot_present                              0x4FC2  /* game_flow, u8[16] */
 #define DS_slot_text                                 0x4FD4  /* game_flow, u16[15] */
+#define DS_msg_need_name                             0x4FF2  /* game_flow, u16 */
+#define DS_geek_index                                0x4FF4  /* game_flow, i16 */
+#define DS_save_name_tmpl                            0x4FF6  /* game_flow, char[13] */
 #define DS_TYRE_PICS                                 0x5030  /* garage, i16[3][4] */
+#define DS_cal_x0                                    0x5048  /* game_flow, i16 */
+#define DS_cal_y0                                    0x504A  /* game_flow, i16[4] */
+#define DS_cal_row0                                  0x5052  /* game_flow, i16[4] */
 #define DS_MONTH_NAME                                0x5082  /* garage, char*[4] */
 #define DS_car_colour_pairs                          0x50C2  /* race, u8[][2] */
 #define DS_manifold_carbs                            0x5126  /* race, i16[8] */
@@ -164,13 +182,22 @@
 #define DS_BOLT_CTX                                  0x5184  /* garage, i16[] */
 #define DS_bay_layout_cur                            0x518C  /* garage, i16[6] */
 #define DS_BOLT_SIDE                                 0x5198  /* garage, i16[] */
+#define DS_opp_pal_saved                             0x51AC  /* race, u8[2] */
 #define DS_cruise_accel                              0x51D8  /* race, i16[6] */
 #define DS_cruise_ratio                              0x51E2  /* race, i16[6] */
 #define DS_skip_fx                                   0x51EC  /* race, i16 */
 #define DS_last_pick                                 0x51F8  /* race, i16 */
+#define DS_end_face0                                 0x526A  /* game_flow, u8[6] */
+#define DS_end_faces                                 0x5270  /* game_flow, u8[19*6] */
+#define DS_end_lips                                  0x52E2  /* game_flow, u8[9*6] */
+#define DS_end_pics1                                 0x5318  /* game_flow, i16[] */
+#define DS_end_pics2                                 0x5328  /* game_flow, i16[] */
 #define DS_stats_done                                0x53E6  /* race, i16 */
 #define DS_tire_slip_tab                             0x54B2  /* race, i16[3][5] */
 #define DS_ai_steps_done                             0x54D0  /* race, i16 */
+#define DS_ai_yield_toggle                           0x54D2  /* race, i16 */
+#define DS_ai_in_curve                               0x54D6  /* race, i16 */
+#define DS_ai_alongside_count                        0x54D8  /* race, i16 */
 #define DS_ai_brake                                  0x54DA  /* race, i16 */
 #define DS_gear_spread                               0x54DC  /* race, i16[4][5] */
 #define DS_eng_torque                                0x5504  /* race, i16[3][5] */
@@ -199,8 +226,10 @@
 #define DS_pulse3_ptr                                0x58DE  /* sound, u16 */
 #define DS_pulse3_delay                              0x58E0  /* sound, u16 */
 #define DS_delay_scale                               0x58E2  /* sound, u16 */
+#define DS_race_cga_dbl                              0x58E4  /* race, i16 */
 #define DS_has_clock                                 0x58E6  /* race, u16 */
 #define DS_wheel_pics                                0x58E8  /* race, i16[3] */
+#define DS_race_run_passes                           0x58EE  /* race, i16 */
 #define DS_anim_engine_snd                           0x5A0E  /* sound, u16 */
 #define DS_saved_bios_mode                           0x5AEE  /* platform, u8 */
 #define DS_saved_equip                               0x5AF0  /* platform, u8 */
@@ -246,11 +275,15 @@
 #define DS_picdir_seg                                0x691C  /* platform, u16 */
 #define DS_g_font_seg                                0x6A2A  /* video, u16 */
 #define DS_seg389b_centre                            0x6A2C  /* race, u16 */
+#define DS_wheel_pic_ptrs                            0x6C28  /* race, far Desc*[3] */
+#define DS_shifter_rec                               0x6C34  /* race, near* */
+#define DS_shifter_pos                               0x6C36  /* race, i16 */
 #define DS_cursor_drawn_x                            0x6C46  /* platform, i16 */
 #define DS_cursor_drawn_y                            0x6C48  /* platform, i16 */
 #define DS_cursor_moved                              0x6C4A  /* platform, u8 */
 #define DS_screen_id                                 0x6C4C  /* platform, u16 */
 #define DS_last_click_code                           0x6C4E  /* platform, u8 */
+#define DS_demo_pick                                 0x6C50  /* game_flow, i16 */
 #define DS_vib_amount                                0x6C52  /* sound, u16 */
 #define DS_vib_last_div                              0x6C54  /* sound, u16 */
 #define DS_hall_new_score                            0x6C5E  /* game_flow, i16 */
@@ -276,6 +309,7 @@
 #define DS_opp_v70                                   0x6CB2  /* race, i16 */
 #define DS_opp_skill                                 0x6CB4  /* race, i16 */
 #define DS_opp_lat_target                            0x6CB6  /* race, i16 */
+#define DS_opp_band_tmp                              0x6CB8  /* race, u16 */
 #define DS_opp_shift_rpm                             0x6CBA  /* race, i16 */
 #define DS_arena                                     0x6CD0  /* platform, far ptr */
 #define DS_build_yaw                                 0x6DFE  /* race, s16 */
@@ -437,6 +471,7 @@
 #define DS_pct_covered                               0x82C8  /* race, i16 */
 #define DS_hall_records                              0x82CA  /* platform, u8[230] */
 #define DS_car_pool                                  0x83B0  /* game_flow, u8[16*0x28] */
+#define DS_gear_label_shown                          0x8630  /* race, i16 */
 #define DS_player_ahead                              0x8632  /* race, u16 */
 #define DS_seg_right_ptr                             0x8634  /* race, far u16* */
 #define DS_mir_y                                     0x8638  /* race, s16[8] */
@@ -485,6 +520,9 @@
 #define FN_cpu_speed_calibrate                       0x000005C6u  /* platform, near int (void) */
 #define FN_slow_flag_set                             0x00000659u  /* platform, near void (void) */
 #define FN_main                                      0x0000066Fu  /* platform, far void (int argc; char **argv) */
+#define FN_classifieds_open                          0x000008B4u  /* garage, void(int *list, int item) */
+#define FN_classifieds_pic                           0x000009B7u  /* garage, Desc far *(int pool) */
+#define FN_classifieds_run                           0x000009CBu  /* garage, int(void) */
 #define FN_hotspots_reset                            0x00000D58u  /* platform, far void (void) */
 #define FN_click_clear                               0x00000D78u  /* platform, far void (void) */
 #define FN_music_stop                                0x00000D99u  /* platform, far void (void) */
@@ -510,6 +548,7 @@
 #define FN_timer_isr                                 0x00001FE2u  /* platform, interrupt */
 #define FN_race_ctrl_reset                           0x00002374u  /* platform, far void (void) */
 #define FN_race_isr                                  0x0000238Cu  /* platform, interrupt */
+#define FN_race_phys_step                            0x0000253Bu  /* race, far void() */
 #define FN_bios_mode_a_set                           0x00002B9Au  /* platform, far void (u8 equip; u8 mode) */
 #define FN_bios_mode_b_set                           0x00002BADu  /* platform, far void (u8 equip; u8 mode) */
 #define FN_bios_mode_a_apply                         0x00002BC0u  /* platform, far void (void) */
@@ -697,6 +736,13 @@
 #define FN_pal_shadow_patch                          0x0F38181Cu  /* video, far void (void) */
 #define FN_pal_shadow_swap                           0x0F38182Cu  /* video, far void (void) */
 #define FN_gfx_init                                  0x0F381859u  /* video, far void (Desc far *a; Desc far *b) */
+#define FN_anim_stop                                 0x0F3819ECu  /* garage, void(int id) */
+#define FN_anim_set_params                           0x0F381A5Fu  /* garage, void(void) */
+#define FN_anim_run                                  0x0F381ABDu  /* garage, void(int slot) */
+#define FN_anim_start                                0x0F381DC9u  /* garage, int(int id) */
+#define FN_anim_tick                                 0x0F381E41u  /* garage, void(int id) */
+#define FN_anim_active                               0x0F381E72u  /* garage, int(int id) */
+#define FN_anim_blink_led                            0x0F381E93u  /* garage, int(Anim *a, Step *p) */
 #define FN_ega_set_palreg                            0x0F381F4Bu  /* video, far void (int reg; int colour) */
 #define FN_ega_set_palette                           0x0F381FA4u  /* video, far void (u8 *pal16) */
 #define FN_status_init                               0x0F382022u  /* video, far void (int y) */
@@ -705,6 +751,8 @@
 #define FN_status_label                              0x0F382213u  /* video, far void (char *s) */
 #define FN_gear_label                                0x0F3822E9u  /* race, far void(int) */
 #define FN_screen_fill_rect                          0x0F38231Au  /* video, far void (int x; int y; int w; int h; u8 c) */
+#define FN_dialog_msg                                0x0F38239Cu  /* garage, void(char *s) */
+#define FN_fatal_message                             0x0F3823CEu  /* garage, void(char *s) */
 #define FN_show_picture                              0x0F382554u  /* video, far void (int id; int clr) */
 #define FN_show_picture_at                           0x0F382638u  /* video, far void (int id; int x; int y; int clr) */
 #define FN_screen_text                               0x0F382656u  /* video, far void (int x; int y; char *s) */
@@ -712,6 +760,9 @@
 #define FN_screen_save_rect                          0x0F3826F2u  /* video, far Desc far *(int x; int y; int w; int h; Desc  */
 #define FN_screen_put_bitmap                         0x0F3827EFu  /* video, far void (Desc far *b; int x; int y) */
 #define FN_screen_put_bitmap_mirror                  0x0F382853u  /* video, far void (Desc far *b; int x; int y) */
+#define FN_msg_draw                                  0x0F3828A4u  /* garage, void(int id) */
+#define FN_msg_draw_at                               0x0F382A62u  /* garage, void(int id, int x, int y) */
+#define FN_msg_erase                                 0x0F382ADFu  /* garage, void(void) */
 #define FN_cursor_shape_offset                       0x0F382B1Cu  /* video, far u16 (int n) */
 #define FN_cursor_init                               0x0F382B28u  /* video, far void (void) */
 #define FN_cursor_ctl                                0x0F382D7Eu  /* video, far void (int op) */
@@ -721,24 +772,44 @@
 #define FN_trans_slide_anim                          0x0F3832CEu  /* garage, void(int pic, int reject) */
 #define FN_trans_remove_anim                         0x0F383404u  /* garage, void(int pic, int mode) */
 #define FN_trans_screen_draw                         0x0F38345Bu  /* garage, void(int pic, char *bolts, ...) */
+#define FN_bay_engine_idx                            0x0F3834FBu  /* garage, int(void) */
+#define FN_bay_carb_pos                              0x0F38351Cu  /* garage, int(int *x, int *y) */
+#define FN_bay_part_pos                              0x0F383589u  /* garage, void(int *x, int *y) */
+#define FN_bay_bolt_pos                              0x0F3835E4u  /* garage, void(int *x, int *y) */
 #define FN_bay_bolt_draw                             0x0F383697u  /* garage, void(int pic) */
 #define FN_bay_bolt_remove_anim                      0x0F3837FCu  /* garage, void(void) */
+#define FN_bay_carb_overlay                          0x0F383951u  /* garage, void(void) */
 #define FN_bay_part_in_anim                          0x0F383A58u  /* garage, void(int pic, int reject) */
 #define FN_bay_part_out_anim                         0x0F383C19u  /* garage, void(int pic, int mode) */
 #define FN_bay_connector_draw                        0x0F383D1Cu  /* garage, void(void) */
 #define FN_bay_draw_car                              0x0F383E35u  /* garage, void(CAR*) */
 #define FN_bay_draw_parts                            0x0F383F2Du  /* garage, void(int *tbl, int *bolts, int own) */
+#define FN_hot_insert                                0x0F38404Bu  /* garage, void(rec *base, rec *r, int n) */
 #define FN_bay_draw_bolts                            0x0F3840CAu  /* garage, void(int *tbl, int *bolts) */
+#define FN_ui_sort_records                           0x0F384265u  /* garage, void(int first, int n) */
 #define FN_fill_rect                                 0x0F384302u  /* video, far void (Desc far *d; int x; int y; int w; int  */
 #define FN_vline                                     0x0F38439Cu  /* video, far void (Desc far *d; int x; int y; int h) */
 #define FN_hline                                     0x0F3843FFu  /* video, far void (Desc far *d; int x; int y; int w) */
 #define FN_draw_frame3                               0x0F384432u  /* video, far void (Desc far *d; int x; int y; int w; int  */
 #define FN_draw_box1                                 0x0F3845D7u  /* video, far void (Desc far *d; int x; int y; int w; int  */
+#define FN_ui_draw_records                           0x0F38465Eu  /* garage, void(rec*) */
+#define FN_ui_push                                   0x0F384A66u  /* garage, void(int screen) */
+#define FN_ui_pop                                    0x0F384BA1u  /* garage, void(int redraw) */
+#define FN_ui_state_reset                            0x0F384BFFu  /* garage, void(void) */
+#define FN_ui_bounds                                 0x0F384C1Au  /* garage, void(int screen, int *x, int *y, int *w, int *h) */
+#define FN_ui_save_bg                                0x0F384D10u  /* garage, Desc far *(int screen, int *x, int *y, int pool) */
+#define FN_hotspot_at                                0x0F384DADu  /* garage, int(int x, int y) */
+#define FN_ui_dialog                                 0x0F384EC1u  /* garage, int(int screen) */
+#define FN_ui_menu                                   0x0F384F14u  /* garage, int(int screen) */
 #define FN_list_box                                  0x0F384F4Fu  /* garage, far int(int scr, int sel, int *xoff, int *list,  */
 #define FN_wear_text                                 0x0F384FC1u  /* garage, char*(int pct) */
 #define FN_list_box_run                              0x0F38500Eu  /* garage, far int(...) */
 #define FN_list_selected                             0x0F38590Bu  /* garage, far int(void) */
+#define FN_text_input                                0x0F385910u  /* garage, int(int x, int y, char *buf, int maxlen) */
+#define FN_prompt_number                             0x0F385D37u  /* garage, int(int x, int y, char *label, uint *v) */
 #define FN_edit_number                               0x0F385DA7u  /* garage, far int(uint *v, char *buf) */
+#define FN_ui_edit_number                            0x0F385E1Eu  /* garage, int(int screen, uint *v) */
+#define FN_ui_edit                                   0x0F385E54u  /* garage, int(int screen, int maxlen, char *buf) */
 #define FN_rnd                                       0x0F385EB6u  /* platform, far int (int n) */
 #define FN_lib_seek                                  0x0F386016u  /* platform, far int (int handle; long pos) */
 #define FN_pic_index                                 0x0F386057u  /* platform, near int (int id) */
@@ -804,8 +875,15 @@
 #define FN_race_run                                  0x0F387B22u  /* race, far int() */
 #define FN_ega_blit_4planes                          0x0F388126u  /* video, near */
 #define FN_ega_vram_cache_strips                     0x0F38819Au  /* video, near */
+#define FN_car_strip_setup                           0x0F3884BEu  /* garage, void(Desc far *bg, Desc far **bgsrc, int smoke,  */
+#define FN_pump_overlay                              0x0F38872Eu  /* garage, void(int x, int dy, int carx, int y, Desc far *d */
 #define FN_car_compose                               0x0F388866u  /* garage, far void(...) */
 #define FN_car_draw                                  0x0F388E48u  /* garage, far void(int mode, int model, int flags, int sti */
+#define FN_walker_anim                               0x0F38975Bu  /* garage, void(Desc far *pic, int sx, int sy, int w, int h */
+#define FN_carhop_frames                             0x0F38985Cu  /* garage, void(Desc far **frames, int mode) */
+#define FN_carhop_strip                              0x0F38990Fu  /* garage, void(Desc far **d) */
+#define FN_carhop_anim                               0x0F3899D9u  /* garage, void(int mode, int opp) */
+#define FN_town_bg_save                              0x0F389E5Du  /* garage, void(void) */
 #define FN_arena_clear                               0x0F389EBCu  /* platform, far void (void) */
 #define FN_arena_init                                0x0F389EE9u  /* platform, far void (void) */
 #define FN_arena_low_shrink                          0x0F389F1Au  /* platform, far void (int n) */
@@ -820,6 +898,10 @@
 #define FN_rect_clip_make                            0x0F38A1EEu  /* video, far void (int w; int h; int x; int y; int maxw;  */
 #define FN_sprite_scene_setup                        0x0F38A273u  /* video, far void *(...) */
 #define FN_rect_subtract_edge                        0x0F38A4B9u  /* video, far i16 *(i16 *a; i16 *b; i16 *out; int horiz) */
+#define FN_anim_ring_reverse                         0x0F38A5A5u  /* garage, void(Anim *a) */
+#define FN_anim_phase_set                            0x0F38A65Du  /* garage, void(Anim *a, int i, int count, int dx, int dy) */
+#define FN_anim_phases                               0x0F38A6ADu  /* garage, void(Anim *a, int mode, int d1, int d2, int d3,  */
+#define FN_anim_script                               0x0F38A7EEu  /* garage, void(Anim *a, int mode, int dist) */
 #define FN_sprite_anim_advance                       0x0F38AA37u  /* video, far void (Anim *a) */
 #define FN_sprite_hspan_clip                         0x0F38AAC2u  /* video, far int (int x; int w; Anim *a; i16 *out) */
 #define FN_bitmap_copy_into                          0x0F38AB50u  /* video, far void (Desc far *s; Desc far *d; int flags) */
@@ -834,6 +916,8 @@
 #define FN_far_memcpy                                0x0F38B502u  /* video, far void (void far *src; void far *dst; u16 n) */
 #define FN_bitmap_extract                            0x0F38B51Eu  /* video, far Desc far *(Desc far *s; i16 *r; int pool) */
 #define FN_page_copy_rect                            0x0F38B5AAu  /* video, far void (Desc far *s; Desc far *d; int x0; int  */
+#define FN_tc_wheel_strip                            0x0F38B632u  /* garage, Desc far *(int x) */
+#define FN_tc_wheel_swap                             0x0F38B82Cu  /* garage, void(int x, int *old, int *new) */
 #define FN_tire_change_anim                          0x0F38BE93u  /* garage, far void(int *old_pics, int *new_pics) */
 #define FN__astart                                   0x1E16001Eu  /* seed */
 #define FN__cinit                                    0x1E1600E4u  /* seed */

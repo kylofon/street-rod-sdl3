@@ -4,4 +4,5 @@
 
 void flow_register_hooks(void)
 {
+    modules.demo_step = demo_step;                /* 0000:1bae, from timer_isr in demo mode */
 }

@@ -170,3 +170,92 @@ in `sound/sound.h`). Only the speaker exists (no AdLib/Tandy code in SR.EXE); PI
   ISR. `python ../tools/snd_compare.py ../work/SR_unp.exe OUT_DIR` checks them against
   `../tools/srsnd.py`: all songs match event for event and tick for tick (vibrato divisor and gate
   each tick), the engine table is identical. `SR_AUDIO_DUMP=file.wav` records the live game's audio.
+
+## Game flow
+
+`src/game/flow*.c` ports `../port/spec/game_flow.md`; the API other subsystems call is `game/flow.h`,
+`game_main` is in `game/game.h`.
+
+* **Files.** `flow_main.c`: `game_main` (the rest of `main 0000:066f`), `title_and_setup 0000:39c0`,
+  `title_sequence 0f38:0bf0`, `game_loop 0000:503f` with the garage dispatch (codes 1–17, −40,
+  `0x29A`, the new/load loop and its `again` flag). `flow_state.c`: `part_alloc/free`,
+  `car_alloc/release`, `msg_box 3ab8`, `garage_full_check`, `broke_check`, `newspaper_front`,
+  opponents and `new_game` (`542e`–`56a9`), `new_game_prompt 570c`. `flow_clock.c`: calendar and game
+  clock (`6476`–`6750`), `summer_over_screen 0f38:0d62`. `flow_save.c`: `HOTROD<n>.SAV`
+  (`5795`–`641e`). `flow_end.c`: `game_over_menu 315b`, hall of fame (`32d0`–`339f`), the ending
+  `ending_king 0000:a544` (called by race's `bob_drive_in`). `flow_demo.c`: `demo_step 0000:1bae`
+  (`modules.demo_step`) and `kbd_inject_scancode 0000:2e93`. `flow_util.c`: the MS C string helpers
+  (`strcpy`, `strcmp`, `atoi`, `itoa`, `memmove`) on DGROUP strings.
+* **Provided elsewhere.** `pools_init 3614` = platform `pools_reset`, `wait_ticks 3a83` =
+  `wait_ticks_or_input`, `hot_data_load` / `hall_load` / `hall_save` (platform), `money_add` (video).
+  The game clock is `DS_game_clock` + `DS_bios_ticks` (rt_ticks, 18.2 Hz) − `DS_rt_base`;
+  `clock_hour()` / `flow_clock_add()` in `flow.h` are the loop's inline `add [05FC], 222h`.
+* **Stack buffers.** Buffers the original keeps in its stack frame and hands to DOS or the UI (save
+  header, car / part records during a load, the elapsed-time dword, the hall name edit, the file
+  name) live in the unused DGROUP stack area `DS:9400`–`94B3` (`FLOW_STK_*` in `flow.h`), so the
+  pointer fields of a record being loaded are patched in `mem[]` exactly as in the original.
+* **Save files** are byte-identical to the original's for the same state: the pointer fields are
+  written as they are in `mem[]` and a load re-allocates the pools in file order, so a loaded game
+  lands at the original DGROUP addresses (checked by a save → load → save round trip: identical
+  files and identical pools / header).
+* **PORT deviations.** The copy protection `0000:2fc8` is not called (SR.EXE itself jumps over it;
+  as if answered). A failed `_dos_open` / `_dos_creat` leaves the handle "not open" (the original
+  tests an uninitialised stack word, so after an unopenable file it may or may not close / call
+  `new_game`). `save_game_screen` fills the drive letter of the file name before `remove()` too (the
+  original has a stale byte there; without effect since `creat` truncates). The hall of fame's
+  right-alignment loop stops at an hour value of 0 (the original loops forever; scores are ≥ 12).
+  `opponents_init`'s model lists are sized for all models (the original's 11-word stack arrays would
+  overflow into each other beyond 10 models of a class; HOT_DATA has fewer).
+
+## Race
+
+`src/game/race*.c` port the race subsystem (`../port/spec/race.md`, `race_render.md`); public API in
+`game/race.h` (drive_to, bob_drive_in, gas_station, jail, car_setup, car_max_speed,
+model_car_setup, opponent_load, opp_palette_set, track_build_all/course, race_run,
+race_phys_step, road_edge_collision), private declarations in `game/race_int.h` (record field
+offsets `PH_*` / `CAR_*` / `OR_*`, the track arrays `TRKW(TRK_L, i)` in segment 389b, `ftol`).
+
+| file | original |
+|---|---|
+| `race_drive.c` | drive_to 8d26, opp_palette_set 8d9c, drive_run 8e2d, race_logic 8ea8, race_run 0f38:7b22 |
+| `race_phys.c` | physics step (race_isr from 253b), race_stop_inputs 2374, finish_stats c407, phys_reset cdaf ... car_max_speed e218, opponent AI, police |
+| `race_results.c` | tires_replace bed4, ticket bf94, crash c1d8, race_msg c497, engine/trans blown c52c/c5ac, race_results c613 |
+| `race_bob.c` | Bob's Drive-In 914c-ab8b (opponents, King, challenge, jukebox dancer) |
+| `race_gas.c` | jail b045/b08c, gas station b3ca-b8a1 |
+| `race_dash.c` | dashboard 0f38:000a-14f2 (needles, clock, wheel, shifter), gear_label 0f38:22e9 |
+| `race_track.c` / `race_road.c` | segment 2645: track builder, projection, road / scenery / opponent / mirror renderer, road_step, collisions (the span slots 0034/00e7 and 0008/001d are in `platform/blit.c`) |
+
+* **Timing.** As race.md §7 proposes: `road_frame 2645:1e9e` busy-waits (host_pump) until
+  `RACE_TICKS_PER_FRAME` = 9 ticks of the 72.8 Hz timer after the frame's start (8.09 fps); the
+  player physics runs in the platform's race_isr on every 4th tick's DS:0609 countdown, i.e. every
+  12th tick (6.07 Hz), through `modules.race_phys_step`; `DS:8ACC` = `SR_CPU_SPEED` (fast machine).
+  Frames and physics interleave 3:4 as on a fast PC. Track advance is per frame (speed_to_step), so
+  the frame rate must not be raised.
+* **Floating point** (MSC 8087 emulator): `long double` in the original order; values the original
+  stores as doubles (`perf()`'s s, f, g; the clock angle) are rounded to double at the same points;
+  constants are read from their DGROUP doubles; `ftol` truncates, out of range = 0x80000000.
+* PORT deviations: the temporary stock car of `e0e2`/`e218` has flags 0 (the original leaves the
+  word uninitialised on the stack); `opponent_car_view a265` builds its temporary car at DS:9000 (in
+  the original's stack area); uninitialised locals of 2f48 / 2d20 / 9d6d / 9bc5 get fixed values (see
+  the comments); sin/cos are libm's `sinl`/`cosl`.
+* Developer aid: `race_debug_main()` (hooks_race.c) with `SR_DEBUG_RACE=drag|road|cruise|bob`
+  (`SR_DEBUG_MODEL`, `SR_DEBUG_OPP`) runs one drive right after the start-up and exits; off unless the
+  variable is set (to be called from main/game_main).
+
+## Garage and UI
+
+`src/game/garage*.c` port `../port/spec/garage.md` (public API `game/garage.h`), `src/game/ui*.c`
+the 0f38 UI toolkit (`game/ui.h`); hooks (`timer_callback` = `anim_tick`, `hotspot_at`,
+`fatal_message`) are set in `game/hooks_garage.c`.
+
+* `ui_menu.c` screens / hot spots 0f38:4265-4f14 (+ `hotspots_reset` 0000:0d58, missing from the
+  platform), `ui_msg.c` message boxes 239c-2adf, `ui_list.c` list box and text entry 4f4f-5e54,
+  `ui_anim.c` the animation-script interpreter 19ec-1e93 (5 slots DS:7568, scripts DS:58F0).
+* `garage_data.c` car / part records (u16 DS offsets), `garage_shop.c` ads (with the ad pages
+  0000:08b4 / 09cb), selling and haggling, `garage_main.c` garage screen, paint, customising,
+  stickers, tyres, car info, `garage_bay.c` transmission, tune-up, engine bay and their drawing
+  helpers 0f38:3074-4265, `garage_draw.c` car pictures (0f38:8126-9e5d, the sprite scene builder
+  a273-a7ee), Bob's car-hop 975b-99d9 and the tyre-change animation be93 / b632 / b82c.
+* Floating point (0000:3c8d, 49ed): `long double` (x87 extended, as the MSC emulator), `_ftol`
+  truncation; `fild dword` of a 16-bit value with dx = 0 is an unsigned extension.
+* VGA path only: the Tandy / CGA branches of the car-picture code (and 0f38:8336) are not ported.

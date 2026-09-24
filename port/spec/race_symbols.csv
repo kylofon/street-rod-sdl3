@@ -394,3 +394,19 @@ global,DS:8B82,centre_ptr,far u16*,&C of current row
 global,DS:8BC2,opp_alongside,u16,opponent alongside flag
 global,DS:8BCA,pic_hood,Pic far*,LIB2 #7
 global,DS:8BD0,edge_right,s16,right road edge at seg
+func,0000:253b,race_phys_step,far void(),"player physics step of race_isr 0000:238c (from 253b to the iret); modules.race_phys_step"
+func,0f38:22e9,gear_label,far void(int),"status line gear letter DS:0482[i] at x DS:8258"
+global,DS:0350,wheel_idx_shown,i16,"wheel picture index shown by wheel_draw 0f38:1130"
+global,DS:4746,race_saved_cursor_x,i16,"DS:472A saved by phys_reset, restored by drive_run"
+global,DS:4748,race_saved_cursor_y,i16,"DS:472C saved by phys_reset, restored by drive_run"
+global,DS:51AC,opp_pal_saved,u8[2],"palette regs 0Ch/03h saved by opp_palette_set (FFh = none)"
+global,DS:54D2,ai_yield_toggle,i16,"race_step: the opponent yields every 2nd push"
+global,DS:54D6,ai_in_curve,i16,"opp_ai: braked once for the current curve"
+global,DS:54D8,ai_alongside_count,i16,"race_step: frames right beside the opponent"
+global,DS:58E4,race_cga_dbl,i16,"CGA double buffer during race_run (0 on VGA)"
+global,DS:58EE,race_run_passes,i16,"race_run set-up loop counter (1 on VGA)"
+global,DS:6C28,wheel_pic_ptrs,far Desc*[3],"steering wheel pictures loaded by wheel_load"
+global,DS:6C34,shifter_rec,near*,"current shifter record DS:036E+10*i"
+global,DS:6C36,shifter_pos,i16,"knob position shown (-1 none)"
+global,DS:6CB8,opp_band_tmp,u16,"opponent band index temp (d1de, d29d, cf5c)"
+global,DS:8630,gear_label_shown,i16,"gear label cache of race_step (-1 = redraw)"

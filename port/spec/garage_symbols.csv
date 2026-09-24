@@ -144,3 +144,51 @@ global,DS:8272,sticker_x,i16,
 global,DS:8274,sticker_y,i16,
 global,DS:0446,pal_shadow_6,u8,"EGA palette shadow DS:0440+reg"
 global,DS:58D0,music_off,i16,"Squelch it toggle"
+func,0f38:4265,ui_sort_records,"void(int first, int n)",UI: sort screen records by x0
+func,0f38:465e,ui_draw_records,void(rec*),UI: draw a screen record (chain while DS:07A8=FFFF)
+func,0f38:4a66,ui_push,void(int screen),UI: open a hot-spot screen (stack of 4)
+func,0f38:4ba1,ui_pop,void(int redraw),UI: close the top screen
+func,0f38:4bff,ui_state_reset,void(void),UI: clear the screen stack state
+func,0f38:4c1a,ui_bounds,"void(int screen, int *x, int *y, int *w, int *h)",UI: bounding box of a screen
+func,0f38:4d10,ui_save_bg,"Desc far *(int screen, int *x, int *y, int pool)",UI: save the background under a screen
+func,0f38:4dad,hotspot_at,"int(int x, int y)",UI: hot-spot code under a point
+func,0f38:4ec1,ui_dialog,int(int screen),UI: save bg + ui_menu + restore
+func,0f38:4f14,ui_menu,int(int screen),UI: push / wait / pop
+func,0f38:5910,text_input,"int(int x, int y, char *buf, int maxlen)",UI: line editor
+func,0f38:5d37,prompt_number,"int(int x, int y, char *label, uint *v)",UI: numeric prompt (no callers)
+func,0f38:5e1e,ui_edit_number,"int(int screen, uint *v)",UI (no callers)
+func,0f38:5e54,ui_edit,"int(int screen, int maxlen, char *buf)",UI: text field of a screen
+func,0f38:239c,dialog_msg,void(char *s),UI: text into DS:291F + dialog 0x1D
+func,0f38:23ce,fatal_message,void(char *s),"UI: ""Hit Return when ready"" box"
+func,0f38:28a4,msg_draw,void(int id),UI: message box picture + text
+func,0f38:2a62,msg_draw_at,"void(int id, int x, int y)",UI: message box at a position
+func,0f38:2adf,msg_erase,void(void),UI: remove the message box
+func,0f38:19ec,anim_stop,void(int id),UI animation scripts
+func,0f38:1a5f,anim_set_params,void(void),UI animation scripts (near)
+func,0f38:1abd,anim_run,void(int slot),UI animation scripts (near)
+func,0f38:1dc9,anim_start,int(int id),UI animation scripts
+func,0f38:1e41,anim_tick,void(int id),UI animation scripts: tick timer callback
+func,0f38:1e72,anim_active,int(int id),UI animation scripts
+func,0f38:1e93,anim_blink_led,"int(Anim *a, Step *p)",UI animation scripts: lamps of animation 2
+func,0000:08b4,classifieds_open,"void(int *list, int item)",ad pages (garage)
+func,0000:09b7,classifieds_pic,Desc far *(int pool),ad page picture 0x403
+func,0000:09cb,classifieds_run,int(void),ad pages: draw and wait
+func,0f38:34fb,bay_engine_idx,int(void),engine bay (near)
+func,0f38:351c,bay_carb_pos,"int(int *x, int *y)",engine bay (near)
+func,0f38:3589,bay_part_pos,"void(int *x, int *y)",engine bay
+func,0f38:35e4,bay_bolt_pos,"void(int *x, int *y)",engine bay
+func,0f38:3951,bay_carb_overlay,void(void),engine bay (near)
+func,0f38:404b,hot_insert,"void(rec *base, rec *r, int n)",engine bay hot spots (near)
+func,0f38:84be,car_strip_setup,"void(Desc far *bg, Desc far **bgsrc, int smoke, Desc far **bg_out, int top, int h, int **ov0, int **ov1)",car pictures
+func,0f38:872e,pump_overlay,"void(int x, int dy, int carx, int y, Desc far *dst, int pic_a, int pic_b)",car pictures (near)
+func,0f38:9e5d,town_bg_save,void(void),car pictures
+func,0f38:975b,walker_anim,"void(Desc far *pic, int sx, int sy, int w, int h, int dx, int y, int base)",rows of a picture into the car strip DS:5A0A (race provisional name)
+func,0f38:985c,carhop_frames,"void(Desc far **frames, int mode)",Bob's car-hop (near)
+func,0f38:990f,carhop_strip,void(Desc far **d),Bob's car-hop (near)
+func,0f38:99d9,carhop_anim,"void(int mode, int opp)",Bob's car-hop walks in / away
+func,0f38:a5a5,anim_ring_reverse,void(Anim *a),sprite scenes
+func,0f38:a65d,anim_phase_set,"void(Anim *a, int i, int count, int dx, int dy)",sprite scenes
+func,0f38:a6ad,anim_phases,"void(Anim *a, int mode, int d1, int d2, int d3, int dist, int p1, int p2)",sprite scenes
+func,0f38:a7ee,anim_script,"void(Anim *a, int mode, int dist)",sprite scenes
+func,0f38:b632,tc_wheel_strip,Desc far *(int x),tyre change (near)
+func,0f38:b82c,tc_wheel_swap,"void(int x, int *old, int *new)",tyre change (near)

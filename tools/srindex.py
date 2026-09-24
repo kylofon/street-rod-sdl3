@@ -102,6 +102,16 @@ HANDLERS = [
     0x0105b,    # 0000:105b critical error INT 24h (0000:1111)
 ]
 seeds.update(HANDLERS)
+# Far code pointers kept in DGROUP tables (relocated seg:off pairs): the graphics driver vector
+# sources copied to DS:78A2 (platform.md 2.8, video.md 4.1): (table, entries).
+FAR_TABLES = [(0x5BD0, 15), (0x5B04, 15), (0x5B8A, 15)]
+for tbl, n in FAR_TABLES:
+    for k in range(n):
+        o, sg = struct.unpack_from('<HH', img, DS_BASE + tbl + 4 * k)
+        if (o or sg) and sg * 16 + o < DS_BASE:
+            seeds.add(sg * 16 + o)
+# Far code pointers loaded as immediates that the automatic scan misses (video.md, Index additions).
+seeds.update([0x2595 * 16 + 0x0004, 0x2634 * 16 + 0x000a])
 for sg, tbl, n, where in PTR_TABLES:
     base = DS_BASE if where == 'ds' else sg * 16
     for k in range(n):

@@ -1,0 +1,146 @@
+kind,address,name,type,notes
+func,21a0:0006,ega_wait_vretrace,far void (void),"wait while 3DAh bit0, then until bit3"
+func,21a0:0014,ega_set_split,far void (int line),"CRTC line compare after a retrace; -1 off; VGA (DS:0254) adds 100 when <= 200"
+func,21a0:1128,ega_install_vectors,far void (void),copy 15 far ptrs DS:5BD0 -> DS:78A2
+func,21a0:113a,ega_draw_text,"far void (Desc far *d; int x; int y; char *s)","slot 3; font DS:6A2A; write mode 2 bg DS:8243 fg DS:8242; end x -> DS:824C"
+func,21a0:1508,ega_recolour_rect,"far void (Desc far *d; int from; int to; int x0; int y0; int x1; int y1)","slot 6; read mode 1 colour compare + write mode 2; [x0,x1)x[y0,y1)"
+func,21a0:16dc,ega_copy_page,"far int (u8 far *src; u8 far *dst)","slot 5; 8000 bytes latched (write mode 1)"
+func,21a0:1722,ega_blinds,"far int (u8 far *dst; u8 far *src)","slot 10; 5 interleaved passes (DS:5C0C), >= 3 ticks each"
+func,21a0:182e,ega_show_page,far void (int page),"CRTC start = page*2000h, wait for retrace"
+func,21a0:1862,ega_blit,"far u16 (Desc far *src; Desc far *dst; Rect *r; u8 flags)","slot 0; flags bit0 colour planes, bit1 mask; screen->screen via 24e7:0008"
+func,21a0:1ae9,ega_sprite_over_bg,"far int (Desc far *spr; Desc far *dst; Desc far *bg; Tail *t; Rect *r)","per plane dst = (bg & mask) | spr (24f4:000a), then latched tail rows"
+func,21a0:1cd5,ega_blit_masked,"far int (Desc far *src; Desc far *dst; Rect *r; int mode)","slot 2; mode 0 -> 2634:000a, else 2595:0004, per plane"
+func,21a0:1e2d,ega_save_rect,"far void (u8 far *src; int w; int h; u8 far *dst; int sstride)","latched copy into a packed VRAM buffer"
+func,21a0:1ea2,shift_row,"near void (u8 *row; int shift; int n)","shift n bytes right (>0) / left (<0) in place"
+func,21a0:1f8d,ega_put_shifted_row,"near void (u8 far *dst; u8 *buf4; int w; int bit; int shift)","one 4x40-byte plane row buffer to the screen at a bit offset"
+func,21a0:223b,ega_blit_shifted,"far void (Desc far *src; Desc far *dst; Rect *r)","slot 1; unclipped memory -> screen at any pixel x"
+func,21a0:23bc,ega_line,"far void (int x0; int y0; int x1; int y1; int colour)","slot 12; set/reset Bresenham into segment DS:787A"
+func,21a0:252e,ega_pixel_addr,near asm,"AX=y BX=x -> ES:BX in DS:787A, CL=7-(x&7), AH=1"
+func,21a0:254d,ega_get_pixel,near asm,dead code (no reference): colour of a pixel via GC4
+func,21a0:2568,anim_restore_rect,"near void (i16 *r; Desc far *page; Desc far *bg; int mode)",latched dirty-rect restore for ega_anim_step
+func,21a0:25d9,ega_anim_step,far int (Anim *a),slot 9; sprite animation over a VRAM background with page flips
+func,21a0:28ec,ega_slide_sprite,"far void (int top; int bottom; int x; int from; int to; Desc far *spr)","slot 11; 2 rows per frame, back page -> front with retrace waits"
+func,21a0:0952,tdy_install_vectors,far void (void),Tandy: copy DS:5B8A -> DS:78A2 (parked)
+func,21a0:04ab,tdy_blit,,Tandy slot 0 (parked)
+func,21a0:07ac,tdy_blit_shifted,,Tandy slot 1 (parked)
+func,21a0:0358,tdy_blit_masked,,Tandy slot 2 (parked)
+func,21a0:0964,tdy_draw_text,,Tandy slot 3 (parked)
+func,21a0:0c09,tdy_copy_page,,Tandy slot 5 (parked)
+func,21a0:0a4f,tdy_recolour_rect,,Tandy slot 6 (parked)
+func,21a0:0d62,tdy_anim_step,,Tandy slot 9 (parked)
+func,21a0:0c26,tdy_blinds,,Tandy slot 10 (parked)
+func,0e6c:0175,ega_draw_cursor,"far void (u8 far *img; u8 far *mask; u8 far *save; u8 far *scr; int xb; int y; int wb; int rows)","slot 4; 4-plane save-under in VRAM via latches (bit mask 0); relies on SEQ index 2"
+func,0e6c:0002,tdy_draw_cursor,,Tandy slot 4 (parked)
+func,0e92:0006,pic_unpack,"far int (u8 far *src; u8 far *dst; int n; u8 *tokens; int ntok)",FORMATS.md; reads the VRAM cache through GC4
+func,24e7:0008,ega_latch_copy,"far void (u8 far *src; u8 far *dst; int wb; int h; int xb; int y; int stride)","VRAM->VRAM rect, write mode 1; 8-bit y*stride"
+func,24e7:008b,ega_latch_copy_to40,"far void (u8 far *src; int wb; int h; u8 far *dst; int sstride)","VRAM->VRAM, dst stride 40, write mode 1"
+func,24f4:000a,rows_composite,"far void (u8 far *dst; u16 seg; u16 src; u16 mask; u16 bg; int stride; int wb; int h; int bgstride; int dststride)",one plane: dst = (mask & bg) | src (unrolled)
+func,2595:0004,rows_mask_or,"far void (u8 far *dst; u16 seg; u16 src; u16 mask; int stride; int wb; int h; int dststride)",one plane: dst = (dst & mask) | src (unrolled); code ptr in 21a0:1d97
+func,2634:000a,rows_mask_blend,"far void (u8 far *dst; u16 seg; u16 src; u16 mask; int stride; int wb; int h; int dststride)",one plane: dst = (dst & mask) | (src & ~mask); code ptr in 21a0:1d9f
+func,2634:00c1,make_mask_plane,"far void (u8 far *planes; u8 far *mask; u16 total)",mask = ~(p0|p1|p2|p3)
+func,2645:0008,ega_setreset_on,far void (void),"if EGA: GC1=0Fh, GC3=hi(DS:5C1E)"
+func,2645:001d,ega_setreset_off,far void (void),"if EGA: GC0=GC1=GC3=0, GC8=FFh"
+func,2645:0034,ega_hspan,"far void (int x0; int x1; int y; int colour)","slot 13; clip DS:5E4E-5E54; only sets GC0"
+func,2645:00e7,ega_fill_rows,"far void (int y; int colour)",slot 14; rows y..DS:5E52-1 of DS:787A
+func,2645:014b,ega_pixel_addr2,near asm,copy of 21a0:252e
+func,0f38:1859,gfx_init,"far void (Desc far *a; Desc far *b)","pages, mode constants DS:8236-823E, colour scheme, page table DS:7316"
+func,0f38:0dbd,gfx_screen_mode,far void (int n),"0 save pages, 1/4 restore + split off, 2 start 0, 3 single buffer"
+func,0f38:1680,clip_rect,"far int (Desc far *s; Desc far *d; Rect *in; Rect *out)",pixels -> bytes (DS:823A) and clip
+func,0f38:1640,far_memset,"far void (u8 far *p; u8 v; u16 n)",rep stosb
+func,0f38:177d,wait_vretraces,far void (int n),n x start of vertical retrace (3DAh bit3 / 3BAh bit7)
+func,0f38:17c8,font_string_width,far int (char *s),font DS:691A
+func,0f38:1f4b,ega_set_palreg,far void (int reg; int colour),waits for retrace; INT 10h AX=1000h/1001h via int86x; shadow DS:0440
+func,0f38:1fa4,ega_set_palette,far void (u8 *pal16),INT 10h AX=1002h (16 + overscan DS:8248); values > 7 get |10h
+func,0f38:0b2d,pal_black,far void (void),driver slot 7: ega_set_palette(DS:0452); DS:8249=0
+func,0f38:0b3f,pal_normal,far void (void),driver slot 8: ega_set_palette(DS:0440); DS:8249=1
+func,0f38:17fc,pal_reg12_5,far void (void),ega_set_palreg(0Ch; 5)
+func,0f38:180c,pal_reg12_13,far void (void),ega_set_palreg(0Ch; 0Dh)
+func,0f38:181c,pal_shadow_patch,far void (void),DS:0446..0448 = 09 01 03 (no hardware write)
+func,0f38:182c,pal_shadow_swap,far void (void),swap 17 bytes DS:0440 <-> DS:0462
+func,0f38:4302,fill_rect,"far void (Desc far *d; int x; int y; int w; int h)",horizontal lines via slot 12 in DS:8244
+func,0f38:439c,vline,"far void (Desc far *d; int x; int y; int h)",slot 12 in DS:8245
+func,0f38:43ff,hline,"far void (Desc far *d; int x; int y; int w)",fill_rect in DS:8245
+func,0f38:4432,draw_frame3,"far void (Desc far *d; int x; int y; int w; int h)",3-px frame outside the rect; style DS:8246
+func,0f38:45d7,draw_box1,"far void (Desc far *d; int x; int y; int w; int h)",1-px outline outside the rect
+func,0f38:b5aa,page_copy_rect,"far void (Desc far *s; Desc far *d; int x0; int y0; int x1; int y1)",inclusive byte-aligned rect via slot 0
+func,0f38:b31f,bitmap_blit_at,"far void (Desc far *s; Desc far *d; int dx; int dy; int flags)",whole bitmap via slot 0
+func,0f38:b51e,bitmap_extract,"far Desc far *(Desc far *s; i16 *r; int pool)",sub-rect into a new bitmap (slot 0 flags 3)
+func,0f38:ab50,bitmap_copy_into,"far void (Desc far *s; Desc far *d; int flags)",init d like s then copy
+func,0f38:9fce,arena_bitmap_alloc,"far Desc far *(int w; int h; int flags; int pool)",descriptor + planes (+ mask) from the arena
+func,0f38:acbf,bitmap_make_shifted,"far Desc far *(Desc far *s; int shift; Desc far *d)",copy shifted right by shift&7 px
+func,0f38:af50,bitmap_blit_masked_shift,"far void (Desc far *s; Desc far *d; i16 *r; int and_mask)",pre-shift then slot 2
+func,0f38:b0f2,bitmap_composite_behind,"far void (Desc far *s; Desc far *d; int x; int y)",draw behind existing pixels (mask merge unless DS:5AA6)
+func,0f38:b3b4,pic_draw_masked,"far void (Desc far *d; int id; u8 x; u8 y; int flag)",temp pic_get + af50 + free
+func,0f38:abc2,bitmap_opaque_extent,"far void (Desc far *b; int *left; int *right)",first/last opaque mask column
+func,0f38:a0fa,rect_intersect,"far i16 *(i16 *a; i16 *b; i16 *out)","{x0,y0,x1,y1}; NULL if empty"
+func,0f38:a198,rect_clip_to_view,"far i16 *(int x; int y; int w; int h; i16 *out)",view DS:825A-8262
+func,0f38:a1ee,rect_clip_make,"far void (int w; int h; int x; int y; int maxw; int maxh; i16 *out)",aligned clipped rect
+func,0f38:a4b9,rect_subtract_edge,"far i16 *(i16 *a; i16 *b; i16 *out; int horiz)",dirty strip of b not covered by a
+func,0f38:aa37,sprite_anim_advance,far void (Anim *a),frame step of ega_anim_step animations
+func,0f38:aac2,sprite_hspan_clip,"far int (int x; int w; Anim *a; i16 *out)",tile overlap for ega_anim_step
+func,0f38:a273,sprite_scene_setup,far void *(...),builds the animation lists DS:77BA / 7D18-7D52
+func,0f38:231a,screen_fill_rect,"far void (int x; int y; int w; int h; u8 c)","page B + mirror, pointer hidden"
+func,0f38:2656,screen_text,"far void (int x; int y; char *s)",slot 3 on page B + mirror
+func,0f38:26a4,screen_hline,"far void (int x; int y; int w)",hline on page B + mirror
+func,0f38:26f2,screen_save_rect,"far Desc far *(int x; int y; int w; int h; Desc far *dst)",page B rect into a bitmap
+func,0f38:27ef,screen_put_bitmap,"far void (Desc far *b; int x; int y)",bitmap to page B
+func,0f38:2853,screen_put_bitmap_mirror,"far void (Desc far *b; int x; int y)",bitmap to page B + mirror
+func,0f38:2d7e,cursor_ctl,far void (int op),"op >= 0 shape; -1/-2 show (-2 also page A); -3/-4 hide (DS:4733)"
+func,0f38:2e8b,cursor_redraw,"far void (int x; int y)","restore save-under (24e7:008b), draw via slot 4, mirror"
+func,0f38:2b28,cursor_init,far void (void),"8 pre-shifted pointer copies from picture 2, save-under at A000:1F40, DS:8247=2"
+func,0f38:2b1c,cursor_shape_offset,far u16 (int n),n * DS:7B06
+func,0f38:8126,ega_blit_4planes,near,"garage: per plane SEQ2/GC4 + 2595:0004"
+func,0f38:819a,ega_vram_cache_strips,near,garage: strips cached in page DS:731E (write mode 2 fill; 21a0:1e2d)
+global,DS:0254,g_vga,u16,1 = VGA (split screen formula)
+global,DS:02D0,g_anim_yoff,i16,subtracted from the sprite height in ega_anim_step
+global,DS:02E6,g_saved_page_b,far Desc*,gfx_screen_mode(0)
+global,DS:02EA,g_saved_page_a,far Desc*,gfx_screen_mode(0)
+global,DS:03A0,g_scheme_ega,u8[],colour schemes (5 bytes each from +5); DS:787E points here on EGA/Tandy
+global,DS:03F0,g_scheme_cga,u8[],colour schemes for CGA/Hercules
+global,DS:0440,pal_shadow,u8[17],"palette table / shadow: 00 00 08 07 0F 07 09 0B 03 02 04 0C 05 0A 06 0E"
+global,DS:0452,pal_black_tab,u8[16],all 0 (pal_black)
+global,DS:0462,pal_alt_tab,u8[17],alternate palette swapped in by 0f38:182c
+global,DS:04AC,pal_fatal_tab,u8[16],palette of the fatal message box (= default)
+global,DS:02D4,pal_intro_tab,u8[16],title sequence palette
+global,DS:0692,pal_protect_tab,u8[16],copy-protection screen palette (0000:2fc8)
+global,DS:0792,g_slide_overlay,far Desc*,drawn over each ega_slide_sprite frame when non-null
+global,DS:4733,g_ptr_show,i8,pointer visible when > 0
+global,DS:4C14,g_vram_pool_base,far ptr,A000:0000
+global,DS:4C18,g_vram_pool_used,u16[4],bytes used per plane in the picture cache (from A000:7D00)
+global,DS:5B8A,g_vec_tandy,far ptr[15],Tandy driver template
+global,DS:5BD0,g_vec_ega,far ptr[15],EGA/VGA driver template
+global,DS:5C0C,g_blinds_rows,u16[5],0 50 A0 28 78
+global,DS:5C15,g_lmask,u8[9],00 80 C0 E0 F0 F8 FC FE FF
+global,DS:5C1E,g_gc3,u16,high byte -> GC3 (0 = replace); never written
+global,DS:5E4E,g_span_xmin,i16,hspan clip
+global,DS:5E50,g_span_ymin,i16,hspan clip
+global,DS:5E52,g_span_ymax,i16,hspan clip / fill_rows end row
+global,DS:5E54,g_span_xmax,i16,hspan clip
+global,DS:68E2,g_desc_seg,u16,segment 2e3e of the static page descriptors
+global,DS:691A,g_font_seg2,u16,font segment 0e9f (font_string_width)
+global,DS:6A2A,g_font_seg,u16,font segment 0e9f (ega_draw_text)
+global,DS:70AC,g_slide_overlay_rect,Rect,rect for DS:0792
+global,DS:7316,g_page,far Desc*[4],"pages: 822A, 822E, 2e3e:0060 (A000:4000), 2e68:0000 (A000:6000)"
+global,DS:767C,g_draw_off,u16,draw offset (ignored by the EGA line/span routines)
+global,DS:787A,g_draw_seg,u16,segment for ega_line / ega_hspan / ega_fill_rows
+global,DS:787E,g_scheme,u8 *,colour scheme table (DS:03A0 on EGA)
+global,DS:78A2,drv_vec,far ptr[15],driver vector table
+global,DS:7AEC,g_ptr_save,far Desc*,pointer save-under (planes A000:1F40)
+global,DS:822A,g_front,far Desc*,visible page A
+global,DS:822E,g_back,far Desc*,back page B (drawn into)
+global,DS:8236,driver_id,i16,-2 EGA/VGA; -3 CGA; -4 Hercules; -6 Tandy
+global,DS:8238,g_nplanes,u16,4 on EGA
+global,DS:823A,g_px_shift,u16,pixel -> byte shift (3 on EGA)
+global,DS:823C,g_px_factor,u16,1 EGA / 2 CGA / 4 Tandy
+global,DS:823E,g_x_align,i16,FFF8h on EGA
+global,DS:8240,g_mirror,u16,1 = draw on page B and mirror to page A; 0 = single buffer
+global,DS:8242,g_text_fg,u8,text foreground
+global,DS:8243,g_text_bg,u8,text background
+global,DS:8244,g_fill_col,u8,fill colour
+global,DS:8245,g_line_col,u8,line / frame colour
+global,DS:8246,g_frame_style,u8,0 none 1 single 2 double 3 solid
+global,DS:8247,g_ui_level,u8,0 text mode 1 graphics 2 pointer ready
+global,DS:8248,g_overscan,u8,border colour for ega_set_palette
+global,DS:8249,g_pal_visible,u8,0 after pal_black 1 after pal_normal
+global,DS:824C,g_text_end_x,i16,end x of the last ega_draw_text
+global,DS:824E,g_text_y,i16,y of the last ega_draw_text

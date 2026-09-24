@@ -190,8 +190,8 @@ Parked.
 | `03A0`… | `g_scheme_ega` | u8[] | EGA/Tandy colour scheme; `+5..+9` = `0D 09 09 0F 01` copied to `8242..8246` | const | `0f38:1859` |
 | `03F0`… | `g_scheme_cga` | u8[] | CGA scheme (`+5..+9` = `01 02 02 03 01`) | const | `0f38:1859` |
 | `0792` | `g_slide_overlay` | far Desc* | foreground drawn over each `slide_sprite` frame (if non-null) | game | `21a0:28ec` |
-| `4C14` | `g_vram_cache_base` | far ptr | `A000:0000` | const | `0000:3967` |
-| `4C18` | `g_vram_cache_used` | u16[4] | bytes used in each plane's cache pool | `0000:3967` | `0000:3967` |
+| `4C14` | `g_vram_pool_base` | far ptr | `A000:0000` | const | `0000:3967` |
+| `4C18` | `g_vram_pool_used` | u16[4] | bytes used in each plane's cache pool | `0000:3967` | `0000:3967` |
 | `5B8A` | `g_vec_tandy` | far ptr[15] | driver template, Tandy | const | `21a0:0952` |
 | `5BD0` | `g_vec_ega` | far ptr[15] | driver template, EGA/VGA (values in §1.2) | const | `21a0:1128` |
 | `5C0C` | `g_blinds_rows` | u16[5] | `0000 0050 00A0 0028 0078`: start offsets (rows 0,2,4,1,3) of the 5 passes | const | `21a0:1722` |
@@ -207,14 +207,14 @@ Parked.
 | `767C` | `g_draw_off` | u16 | draw offset (non-EGA line/span drivers) | `0f38:01d2…`, `2645:224e/2288` | Tandy/CGA drivers |
 | `787A` | `g_draw_seg` | u16 | segment drawn by `line`, `hspan`, `fill_rows` (A000/A200/A400 on EGA) | same | `21a0:252e`, `2645:014b`, `2645:00e7` |
 | `787E` | `g_scheme` | near u8* | colour scheme in use (`03A0` / `03F0`) | `0f38:1859` | `0f38:1859` |
-| `78A2` | `g_gfx_vec` | far fn[15] | driver vector table (§1.2) | `21a0:1128`, `21a0:0952` | everyone |
+| `78A2` | `drv_vec` | far fn[15] | driver vector table (§1.2) | `21a0:1128`, `21a0:0952` | everyone |
 | `822A` | `g_front` | far Desc* | front (visible) page descriptor | `0f38:1859`, `0f38:0dbd` | 56 functions |
 | `822E` | `g_back` | far Desc* | back page descriptor (= front after `gfx_screen_mode(3)`) | same | 58 functions |
-| `8232`, `8234` | `g_view_x`, `g_view_y` ? | i16 | zeroed by `gfx_init`; see §4.9 | `0f38:1859`, `0f38:3e35`, `0000:81ab`, `0000:a265` | `0f38:3697`, `37fc`, `3a58`, `3c19`… |
-| `8236` | `g_driver` | i16 | -2 EGA/VGA, -3 CGA (`FDh`), -4 Hercules, -6 Tandy | `0000:0316`, `0f38:1859` | 70 functions |
+| `8232`, `8234` | `g_view_x`, `g_view_y` ? | i16 | zeroed by `gfx_init`; meaning open (§8 q5, garage) | `0f38:1859`, `0f38:3e35`, `0000:81ab`, `0000:a265` | `0f38:3697`, `37fc`, `3a58`, `3c19`… |
+| `8236` | `driver_id` | i16 | -2 EGA/VGA, -3 CGA (`FDh`), -4 Hercules, -6 Tandy | `0000:0316`, `0f38:1859` | 70 functions |
 | `8238` | `g_nplanes` | u16 | 4 on EGA (1 otherwise) | `0f38:1859` | desc allocators, … |
 | `823A` | `g_px_shift` | u16 | pixel → byte shift: 3 on EGA | `0f38:1859` | `0f38:1680`, allocators |
-| `823C` | `g_bits_per_px` | u16 | bits per pixel in a byte: 1 on EGA (2 CGA, 4 Tandy) | `0f38:1859` | |
+| `823C` | `g_px_factor` | u16 | bits per pixel in a byte: 1 on EGA (2 CGA, 4 Tandy) | `0f38:1859` | |
 | `823E` | `g_x_align` | i16 | byte alignment mask of x: `FFF8h` on EGA | `0f38:1859` | |
 | `8240` | `g_mirror` | u16 | 1 = draw on page B then mirror the rect to page A (`MIRROR`); 0 after `gfx_screen_mode(3)` (single buffer) | many | `21a0:28ec`, `0f38` UI |
 | `8242` | `g_text_fg` | u8 | text foreground (scheme +5, `0D`) | `0f38:1859`, UI | `21a0:113a` |
@@ -227,8 +227,8 @@ Parked.
 | `8249` | `g_pal_visible` | u8 | 0 after `pal_black`, 1 after `pal_normal` | `0f38:0b2d/0b3f` | UI |
 | `824C`, `824E` | `g_text_end_x`, `g_text_y` | i16 | end x and y of the last `draw_text` | `21a0:113a` | UI |
 | `8266`, `8268` | | i16 | set to -1 by `gfx_init` | `0f38:1859` | UI |
-| `0440` | `g_pal` | u8[17] | palette shadow / default table (§4.10), updated by `ega_set_palreg` | `0f38:1f4b`, `182c`, `181c` | `0f38:0b3f`, `0000:07a6` |
-| `0452`, `0462`, `04AC`, `02D4`, `0692` | `g_pal_black`, `g_pal_alt`, `g_pal_fatal`, `g_pal_intro`, `g_pal_protect` | u8[16] | palette tables (§4.10) | const | `ega_set_palette` callers |
+| `0440` | `pal_shadow` | u8[17] | palette shadow / default table (§4.10), updated by `ega_set_palreg` | `0f38:1f4b`, `182c`, `181c` | `0f38:0b3f`, `0000:07a6` |
+| `0452`, `0462`, `04AC`, `02D4`, `0692` | `pal_black_tab`, `pal_alt_tab`, `pal_fatal_tab`, `pal_intro_tab`, `pal_protect_tab` | u8[16] | palette tables (§4.10) | const | `ega_set_palette` callers |
 | `472A`, `472C` | `g_mouse_x`, `g_mouse_y` | i16 | pointer position (platform) | platform | `0f38:2d7e` |
 | `4733` | `g_ptr_show` | i8 | pointer visible when > 0 | `0f38:2d7e` | same |
 | `7AEC` | `g_ptr_save` | far Desc* | save-under descriptor (planes A000:1F40) | `0f38:2b28` | `0f38:2e8b` |

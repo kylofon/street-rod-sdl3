@@ -9016,6 +9016,46 @@
    "size": 1027
   },
   {
+   "start": "0f38:0b2d",
+   "image": "0fead",
+   "far": true,
+   "calls": [
+    "0f38:1fa4"
+   ],
+   "callers": [],
+   "ds_reads": [],
+   "ds_writes": [
+    "8249"
+   ],
+   "strings": {},
+   "ints": [],
+   "ports": [],
+   "sets_ds": false,
+   "insns": 6,
+   "end": "0f38:0b3f",
+   "size": 18
+  },
+  {
+   "start": "0f38:0b3f",
+   "image": "0febf",
+   "far": true,
+   "calls": [
+    "0f38:1fa4"
+   ],
+   "callers": [],
+   "ds_reads": [],
+   "ds_writes": [
+    "8249"
+   ],
+   "strings": {},
+   "ints": [],
+   "ports": [],
+   "sets_ds": false,
+   "insns": 6,
+   "end": "0f38:0b51",
+   "size": 18
+  },
+  {
    "start": "0f38:0b51",
    "image": "0fed1",
    "far": true,
@@ -9903,6 +9943,8 @@
    "callers": [
     "0000:066f",
     "0000:2fc8",
+    "0f38:0b2d",
+    "0f38:0b3f",
     "0f38:0bf0",
     "0f38:23ce"
    ],
@@ -16139,6 +16181,50 @@
    "insns": 16,
    "end": "1c11:0f70",
    "size": 37
+  },
+  {
+   "start": "1c11:0f70",
+   "image": "1d080",
+   "far": true,
+   "calls": [],
+   "callers": [],
+   "ds_reads": [
+    "8236"
+   ],
+   "ds_writes": [
+    "8249"
+   ],
+   "strings": {},
+   "ints": [],
+   "ports": [
+    "dx, al"
+   ],
+   "sets_ds": false,
+   "insns": 14,
+   "end": "1c11:0f94",
+   "size": 36
+  },
+  {
+   "start": "1c11:0f94",
+   "image": "1d0a4",
+   "far": true,
+   "calls": [],
+   "callers": [],
+   "ds_reads": [
+    "8236"
+   ],
+   "ds_writes": [
+    "8249"
+   ],
+   "strings": {},
+   "ints": [],
+   "ports": [
+    "dx, al"
+   ],
+   "sets_ds": false,
+   "insns": 14,
+   "end": "1c11:0fb8",
+   "size": 36
   },
   {
    "start": "1c11:0fb8",

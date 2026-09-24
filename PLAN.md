@@ -56,7 +56,9 @@ Each format gets a decoder that dumps to `work/` plus an image / contact sheet:
    race tracks, texts.
 5. Save games (`hall_dat`?) and the high-score / "King of the County" file.
 
-### 3. Specs (`port/spec/`)
+### 3. Specs (`port/spec/`) — done (2026-09-24)
+`platform`, `video`, `sound`, `game_flow`, `garage`, `race` + `race_render`; symbols merged into
+`port/symbols.csv` (978 names), `srport/src/symbols.h` generated.
 Split by call tree once the map is known; expected:
 - `platform` — startup, video-mode menu, timer/IRQ, keyboard, mouse, joystick, file I/O, memory
 - `video` — the graphics library (VGA 16-colour path first), blitters, text, palette

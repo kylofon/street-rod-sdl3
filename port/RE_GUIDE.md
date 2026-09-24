@@ -39,20 +39,22 @@ port skeleton (`../TestDrive3/td3port`), not for names.
 
 | Segment(s) | Size | Contents |
 |---|---|---|
-| `0000:0000`–`0659` | 1.6 K | startup: video-mode menu (`0000:0082`, "Recommended mode"), detection (`0000:0226`, `e0e2`–`e6c0`), driver selection `0000:0316` (menu 1 CGA, 2 EGA, 3 VGA, 4 Hercules, 5 Tandy) |
+| `0000:0000`–`0659` | 1.6 K | startup: video-mode menu (`0000:0082`, "Recommended mode"), detection (`0000:0226`, `e569`–`e6c0`), driver selection `0000:0316` (menu 1 CGA, 2 EGA, 3 VGA, 4 Hercules, 5 Tandy) |
 | `0000:066f` | | `main`: switches `nomouse` (DS:0262=0), `demo` (DS:8BCE), `auto` (DS:0612), `nouemem` (DS:0280); libraries `0f38:6943`, title, then the game loop `0000:503f` |
 | `0000:0d58`–`2df4` | 8 K | timer, PC-speaker sound (ports 42h/43h/61h), keyboard, INT 24h handler (`0000:105b`), BIOS mode set `0000:2bc0`/`2be2` |
 | `0000:2e93`–`3c8d` | | game flow helpers, **copy protection** `0000:2fc8` ("What is the color of the car key on page %d?"; skipped in SRSE at `0000:30b5`), memory (`0000:3709` far alloc, `36e9` "Not enough memory") |
 | `0000:3c8d`–`8d26` | 20 K | the garage and the town screens: used cars, auto parts, selling/haggling ("How about $%d ?"), newspaper (`%s %d, 1963`), painting and customising, tuning, save/load (`:HOTROD.SAV`, `0000:59f6`/`5b4a`/`5eea`) |
-| `0000:8d26`–`e0e2` | 22 K | driving: cruising in town, Bob's Drive-In, challenges, drag race, road race, police ("You have been fined"), results and damage (`0000:c613`) |
+| `0000:8d26`–`e569` | 22 K | driving: cruising, Bob's Drive-In, challenges, drag and road race (start `8ea8`, per-frame update `da25`), police and jail (`b08c`), gas station (`b8a1`), results and damage (`c613`), physics set-up and top speed (`e0e2`, `e218`); `79eb`/`7aa4`/`7fb1`/`81ab` are garage screens (race.md) |
 | `0e6c`, `0e92`, `2462`–`2634` | small | blit helpers: picture unpacker `0e92:0006`, planar blits, masks |
 | `0f38` | 52 K | UI library: text and fonts, buttons/menus, mouse and keyboard input, picture libraries (`6016`–`6f0a`), `hall_dat` (hall of fame?), sound effects (`6f0a`–`7700`), dialogs (`7b22`, `be93`) |
 | `1c11` | 8 K | Hercules driver (menu 4, `DS:8236 = -4`) |
 | `1e16` | 14 K | MS C 5.1 runtime (entry `1e16:001e` `_astart`) incl. floating-point emulator stubs |
 | `21a0` | 11 K | **EGA/VGA driver** (menu 2/3, `DS:8236 = -2`; init `21a0:1128`), CRTC split screen `21a0:0014` |
-| `2645`, `2beb` | 32 K | graphics drivers for the other modes (CGA/Tandy) and the mode menu text; to confirm |
+| `2645` | 23 K | race: track builder, road/scenery/opponent/mirror renderer, movement along the road, collisions (`race_render.md`); also the EGA span routines used as driver slots 13/14 |
+| `2beb` | 9 K | MS C floating-point emulator (runtime) |
 
-`DS:8236` = active driver: `-2` EGA/VGA, `-3` CGA?, `-4` Hercules, `-6` Tandy. `DS:0254` = 1 on VGA
+Driver calls go through 15 far pointers at `DS:78A2` (copied from `DS:5BD0` for EGA/VGA; video.md
+4.1). `DS:8236` = active driver: `-2` EGA/VGA, `-3` CGA?, `-4` Hercules, `-6` Tandy. `DS:0254` = 1 on VGA
 (the split-screen code uses the doubled scan-line count). The palette is set with INT 10h AX=1002h
 (`0f38:1fa4`, game palette DS:0440; FORMATS.md "Colours").
 
@@ -64,12 +66,12 @@ tables in `tools/srindex.py` (`PTR_TABLES`).
 
 | Spec file | Code | Scope |
 |---|---|---|
-| `platform` | `0000:0000`–`066f` startup, `0000:0d58`–`2df4`, `0000:3709`–`3ab8` memory, `0000:e0e2`–`e6c0`; `0f38` input / file / library loader (`6016`–`6f0a`); `1e16` (identify only) | startup, mode menu and detection, timer/IRQ, keyboard, mouse (INT 33h), joystick?, files, memory, the picture libraries |
+| `platform` | `0000:0000`–`066f` startup, `0000:0d58`–`2df4`, `0000:3709`–`3ab8` memory, `0000:e569`–`e6c0`; `0f38` input / file / library loader (`6016`–`6f0a`); `1e16` (identify only) | startup, mode menu and detection, timer/IRQ, keyboard, mouse (INT 33h), joystick?, files, memory, the picture libraries |
 | `video` | `21a0` (VGA path), `0e6c`, `0e92`, `2462`–`2634`, `0f38` drawing and text primitives | the driver interface (vector table), pages, blits, masks, fonts, text, split screen, anything that touches video memory |
 | `sound` | `0000` speaker routines, `0f38:6f0a`–`7700` | PC-speaker effects and music, engine sound |
 | `game_flow` | `0000:066f`, `0000:2e93`–`3c8d`, `0000:503f`, save/load `59f6`–`641e`, ending | main loop and screen dispatch, calendar / money / win and lose conditions, save games and `hall_dat`, copy protection (briefly: dropped), demo mode |
 | `garage` | `0000:3c8d`–`8d26` except save/load | garage, used cars, auto parts, haggling, newspaper, paint/customise, tuning, parts wear, the car and parts data tables |
-| `race` | `0000:8d26`–`e0e2` | cruising in town, Bob's, opponents and challenges, drag and road race: road renderer, dashboard, physics, gears, damage, police, AI, results |
+| `race` | `0000:8d26`–`e569`, `2645` | cruising in town, Bob's, opponents and challenges, drag and road race: road renderer, dashboard, physics, gears, damage, police, AI, results |
 
 If a function clearly belongs to another subsystem, list it with a "see `<spec>`" note instead of
 analysing it in depth.

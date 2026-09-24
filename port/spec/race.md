@@ -2,7 +2,7 @@
 
 Target: `work/SR_unp.exe` (DGROUP `3E96`), VGA path (`DS:8236 == -2`, `DS:0254 == 1`). Addresses as in
 `port/RE_GUIDE.md`. Companion spec: **`port/spec/race_render.md`** (code segment `2645`: track generator,
-road/scenery/opponent renderer, road advance `2645:1efc`, lateral road step `2645:213d`, collision test
+road/scenery/opponent renderer, road advance `2645:1efc`, lateral road_step `2645:213d`, collision test
 `2645:206b`). Symbols: `port/spec/race_symbols.csv` (both files).
 
 Confidence tags: **verified** (read instruction by instruction in `x86dis.py` / the emulator-aware
@@ -60,7 +60,7 @@ game loop 0000:503f (game_flow)
             │                                               car_max_speed e218)
             ├ police roll (road race: 1/4)
             ├ drive_run 8e2d → race_run 0f38:7b22 ─ per frame:
-            │     road_frame 2645:213d (render, 9-tick pacing)          [race_render.md]
+            │     road_step 2645:213d (render, 9-tick pacing)          [race_render.md]
             │     race_logic 8ea8 ─ state 0 "Get ready !" / 1 wait, jump start / 2,3 "Go !":
             │         race_step da25 ─ opp_ai d29d (→ opp_gear d1de), police_update (d992),
             │                          player_advance d624 (→ speed_to_step d544, 2645:1efc),
@@ -92,7 +92,7 @@ game loop 0000:503f (game_flow)
 | 0000:95f1 | king_chance | near int() | % chance that the King shows up | verified |
 | 0000:9646 | opp_sort | near void(int all) | candidate list `DS:6C8A` ordered by top-speed difference | verified |
 | 0000:984e | pick_opponent | near int(int pct_king,int all) | King (0x15) or a random candidate, no immediate repeat | verified |
-| 0000:98ba | opponent_load | near void(int opp) | current opponent pointers, random paint/customising | verified |
+| 0000:98ba | opponent_load | near void(int opp) | current opponent pointers, random sticker/customising | verified |
 | 0000:9a27 | opponent_select | near void(int opp,int mode,int flag) | load + show | verified |
 | 0000:9a83 | opp_known_list | near void(int*names,int*idx,int*type) | opponents met (`+0B == 1`) | verified |
 | 0000:9af4 | opponent_search | near int(int) | "Looking for" list, "What's his name?" | verified |
@@ -316,13 +316,14 @@ AI obstruction ended the race (`da25`).
 
 ### 3.3 In-memory game data used here (owned by the garage spec / `HOT_DATA`)
 
-**Car record** (`DS:7EB0` → garage car list, word offsets unless noted): `+00` value ($), `+02` model,
-`+04` byte colour, `+05` byte value class, `+06` transmission part*, `+08` engine part*, `+0A` manifold
-part*, `+0C/+0E/+10` carburettor parts*, `+12` tyre part*, `+14/+15` bytes (roof/bumper state),
-`+16…` bytes (body parts, 3 = ok), `+1F` byte engine state (>0 = installed / <0 = sick), `+20` i8 ignition
-timing (−8…+4, "Retard/Advance"), `+22` fuel in 0.1 gal (≤ 0xAA = 17.0 gal), `+24` flags: bits 8–12
-paint, `0x2000`/`0x4000`/`0x8000` customisations (chopped roof, front and rear bumper stripped; the model
-table decides whether the model had them: `DS:8DF2`/`8DF6`/`8DF8` per model).
+**Car record** (`CAR`, garage.md §4.1; `DS:7EB0` = current car): `+00` value ($), `+02` model,
+`+04` i8 paint colour 0…5 (`DS:50C2` register pairs), `+05` class (copy of the model's), `+06`
+transmission part*, `+08` engine part*, `+0A` manifold part*, `+0C/+0E/+10` carburettor parts*, `+12`
+tyre part*, `+14/+15` transmission bolts, `+16…+1E` engine-bay bolts (3 = tight), `+1F` engine link
+(0 none, −1 disconnected, 1 connected), `+20` i8 ignition timing (−8…+4), `+22` fuel in 0.1 gal
+(≤ 0xAA = 17.0 gal), `+24` flags: bits 8–12 sticker, `0x2000` roof chopped, `0x4000` rear bumper
+stripped, `0x8000` front bumper stripped (the model overlay table `DS:8DF0 + m*10` = `{b0, _, roof,
+scoop, rear_bumper, front_bumper}` says whether the model can have them).
 
 **Part record**: `+02` wear 0…10000 (0x26AC = 9900 = broken), `+04` part type → `DS:4808[type*8]`
 = `{u8 grade, u8 fits (1 GM, 2 Ford, 4 Chrysler, 7 all), u8 category (0 engine, 1 transmission,
@@ -343,8 +344,8 @@ stock drivetrain: bits 0–3 fits mask (make = `(w&0xF)>>1`), 4–5 tyre grade, 
 **Opponent record** (`DS:7FF8 + i*0x12`, i = 0…0x15, 0x15 = the King; loaded from `HOT_DATA`, first
 0x18C bytes): `+00` i8 driver class (challenge table row), `+01` i8 skill (shift-point offset ×100 rpm),
 `+02` i8 clumsiness (AI mistakes), `+04` word picture, `+06` word name msg id, `+08` word car model,
-`+0A` i8 colour, `+0B` i8 status (−1 gone, 1 met), `+0C` i8 counted races against the player, `+0D` i8 his wins against the player,
-`+0E` flags (1/2/4 customisations → car `+24` bits), `+0F` paint, `+10` car re-rolled once.
+`+0A` i8 paint colour, `+0B` i8 status (−1 gone, 1 met), `+0C` i8 counted races against the player, `+0D` i8 his wins against the player,
+`+0E` car flags (4 roof chopped, 2 rear bumper, 1 front bumper, 8 = the King), `+0F` sticker, `+10` car re-rolled once. The `+00` byte is the opponent group in garage.md's terms (0/1/2).
 
 ## 4. Pseudocode
 
@@ -404,7 +405,7 @@ int race_run(void)
         blit(pic rows 0…0x64 → road page DS:8188 at (0,0)); /* rect {w,0x65, sx 0,sy 0, dx 0,dy 0} */
         blit(same → DS:82B4);                               /* second road page (VGA only) */
         blit(pic rows 100…189 (0x5A lines) → dash page DS:7678 at (0,0));   /* A000:0000 */
-        road_first_frame();                      /* 2645:2429 (race_render.md) */
+        road_load_graphics();                    /* 2645:2429 (race_render.md) */
         shifter_draw(player.automatic, player.ngears);      /* 0f38:12f7 */
         shifter_knob(DS:7678, &player);          /* 0f38:14f2 */
         wheel_shown = 100; wheel_load();         /* 0f38:0f53 */
@@ -417,10 +418,10 @@ int race_run(void)
     } while (DS_58EE > 1);
     DS_58EE = 0;
     crtc_split(99);  DS_824A = 100;              /* 21a0:0014(99): VGA line compare → dashboard below */
-    road_init();                                 /* 2645:2114 */
+    road_race_init();                            /* 2645:2114 */
     video_show();                                /* (*DS:78C2)() */
     for (;;) {
-        road_frame();                            /* 2645:213d: render, ≥9 ticks per frame (§7) */
+        road_step();                             /* 2645:213d: render, ≥9 ticks per frame (§7) */
         if (demo == 99) { demo = 0x62; demo_quit(); }
         int r = race_logic();                    /* 8ea8 */
         int w = player.wheel;                    /* sampled after race_logic */
@@ -556,9 +557,9 @@ Doubles (`DS:6980…`): 0.6, 0.09, 0.05, 0.01, 0.1, 88.0, 0.15, 100.0, 0.25, 8.0
 /* performance factor, shared by car_setup and car_max_speed (identical code) */
 double perf(car_t *c, int e, int carb, int man, int tr, int model)
 {
-    double s = (double)((c->flags & 0x2000) || MODEL_8DF2[model] == 0) * 0.09     /* DS:6988 */
-             + (double)((c->flags & 0x8000) || MODEL_8DF8[model] == 0) * 0.05     /* DS:6990 */
-             + (double)((c->flags & 0x4000) || MODEL_8DF6[model] == 0) * 0.01     /* DS:6998 */
+    double s = (double)((c->flags & 0x2000) || MODEL_8DF2[model] == 0) * 0.09     /* roof chopped */
+             + (double)((c->flags & 0x8000) || MODEL_8DF8[model] == 0) * 0.05     /* front bumper off */
+             + (double)((c->flags & 0x4000) || MODEL_8DF6[model] == 0) * 0.01     /* rear bumper off */
              + (double)W556E[CLASS(model)] * 0.1 / 88.0
              + (double)W552E[carb*5 + man] * 0.15 / 100.0
              + (double)W554C[e]            * 0.25 / 100.0
@@ -611,14 +612,15 @@ void car_setup(car_t *c, phys_t *p)           /* dcbe */
     p->gear_dirty = 1;
 }
 ```
-The customisation terms are 1 when the car has the modification bit (`+24`: 0x2000 roof chopped?,
-0x8000/0x4000 bumpers stripped?) or when the model never had the part (`*(int16*)(DS:8DF2/8DF8/8DF6 +
+The customisation terms are 1 when the car has the modification bit (`+24`: 0x2000 roof chopped,
+0x8000 front / 0x4000 rear bumper stripped) or when the model cannot have it (`*(int16*)(DS:8DF2/8DF8/8DF6 +
 model*10) == 0`, runtime model-table columns) — i.e. stripping weight/drag adds up to 0.15. Integer divisions are C `/` (truncate). `_ftol`
 truncates toward zero.
 
 `build_stock_car(model, tmp)` (`e0e2` and the first half of `e218`, verified): a temporary car record
-whose parts are temporary part records `{wear, type}` with `wear = DS:496A` (= **−128**, so a stock
-engine gives the factor (10000+128)/10000):
+whose parts are temporary part records `{wear, type}` with `wear = DS:496A` (= **−128**, the initial
+wear of category 2 in the garage's table `DS:4966`; so a stock engine gives the factor
+(10000+128)/10000):
 
 ```c
 w = MODEL(model)->drive;                                  /* +04 */
@@ -814,7 +816,7 @@ void phys_step(void)                          /* 0000:253b … 2b8d; p = &player
     } else p->steer_in = 0;
     if (abs(p->wheel) > 0)
         p->wheel += p->wheel > 0 ? -((p->wheel >> 2) + 1) : ((-p->wheel) >> 2) + 1;
-    if (racing && road_collide())                                  /* 2645:206b */
+    if (racing && road_edge_collision())                                  /* 2645:206b */
         { p->result |= 0x21; race_stop_inputs(); }                 /* crash */
     phys_busy = 0;
 }
@@ -906,7 +908,7 @@ void player_advance(void)                                     /* d624 */
 {
     seg_step = player.speed ? speed_to_step(player.speed) : 0;
     seg_frac += seg_step;
-    if (seg_frac > 7) road_advance();                         /* 2645:1efc: seg += frac>>3, frac &= 7 */
+    if (seg_frac > 7) road_advance_segment();                 /* 2645:1efc: seg += frac>>3, frac &= 7 */
     if (seg >= track_end && stats_done && player.speed < 1) {
         if (!player_ahead) player.result |= 1; else opp.result |= 1;
         race_stop_inputs();
@@ -1220,12 +1222,12 @@ uint race_results(void)
         if (bet == 5) {                                     /* pink slips: take his car */
             car_t *n = garage_new_car(opp_model, opp_model_ptr->price /*+00*/, 0);   /* 0000:4036 */
             n->tyres->wear = rand(500);
-            n->flags = (n->flags & 0xE0FF) | ((opp_rec->paint & 0x1F) << 8);
+            n->flags = (n->flags & 0xE0FF) | ((opp_rec->sticker & 0x1F) << 8);
             n->flags = (n->flags & 0xDFFF) | ((opp_rec->custom & 4) ? 0x2000 : 0);
             n->flags = (n->flags & 0xBFFF) | ((opp_rec->custom & 2) ? 0x4000 : 0);
             n->flags = (n->flags & 0x7FFF) | ((opp_rec->custom & 1) ? 0x8000 : 0);
             n->colour = opp_rec->colour;
-            if (car->value_class /*+05*/ < n->value_class) {   /* better car: drive it */
+            if (car->klass /*+05*/ < n->klass) {             /* better class: drive it */
                 car->f26 = car2->f26; car2 = car; car = n;
                 car_setup(n, &player);
             }
@@ -1513,10 +1515,10 @@ void opponent_load(int i)                                   /* 98ba */
     vs_king = 0;
     opp_rec->status = 1;                                    /* met */
     int chance = (CLASS(opp_model) >> 1) + 1;
-    if (opp_rec->paint == 0 && opp_rec->races > 5) {
-        opp_rec->paint = (rand(0x14) < chance) ? rand(9) : 0;
-    } else if (opp_rec->paint > 0 && opp_rec->races > 10) {
-        if (rand(0x28) < chance) opp_rec->paint = rand(9);
+    if (opp_rec->sticker == 0 && opp_rec->races > 5) {
+        opp_rec->sticker = (rand(0x14) < chance) ? rand(9) : 0;
+    } else if (opp_rec->sticker > 0 && opp_rec->races > 10) {
+        if (rand(0x28) < chance) opp_rec->sticker = rand(9);
     }
     if (MODEL_8DF6[opp_model] > 0 && MODEL_8DF8[opp_model] > 0 && opp_rec->races > 8)
         opp_rec->custom |= (rand(0x19) < chance) ? 3 : opp_rec->custom;
@@ -1525,7 +1527,7 @@ void opponent_load(int i)                                   /* 98ba */
 tail:
     DS_827A = opp_model_ptr->picture;                       /* +08 */
     DS_827E = (opp_model_ptr->drive >> 4) & 3;              /* tyre grade → wheel picture set */
-    DS_827C = opp_rec->colour;
+    DS_827C = opp_rec->colour;                              /* paint */
     set_car_colour_regs(DS_827C);
     DS_8280 = opp_rec->picture;                             /* +04 driver face */
 }
@@ -1541,7 +1543,7 @@ bool challenge_accept(int bet)                              /* 9bc5 */
     int vp = W7D68[model_class3(car->model)*3 + G(car->engine)];
     int cmp = (W8BAE[opp_rec->dclass*3 + col] + vo < vp) ? 0 : (vp < vo) ? 2 : 1;   /* unsigned compares */
     int c = W8DD8[row*3 + cmp];
-    int paint = !(car->flags & 0x1F00) ? 0 : (car->flags & 0x100) ? 4 : 6;
+    int paint = !(car->flags & 0x1F00) ? 0 : (car->flags & 0x100) ? 4 : 6;   /* sticker bonus */
     int x = (opp_rec->wins * 2 - opp_rec->races) * c;
     c += sign(x) * (abs(x) >> 2) + paint;                   /* sign-magnitude >>2 */
     if (demo) c += (c >> 2) + 10;
@@ -1614,7 +1616,7 @@ the original too).
 
 Other Bob's helpers (likely): `opponent_show(mode,…)` builds `DS:7F32` = driver name (`msg text of
 opp_rec->name`) + `DS:51F2` + car model name, trims words until it fits 0x140 px, shows it centred at
-`DS:51EE`, draws the opponent's car with `0f38:8e48(mode, model, custom, paint, 1, 0xA3, 0, DS:5030 +
+`DS:51EE`, draws the opponent's car with `0f38:8e48(mode, model, custom, sticker, 1, 0xA3, 0, DS:5030 +
 tyre_set*8)` and randomly shows/hides the car-hop (`waitress_toggle`, chances `10·(dest==6) + 75·drink +
 8·demo + 5` %). `opponent_search()` lists the met opponents (`opp_known_list`), "What's his name?"
 (0x198C) if none; selecting one loads him. `opponent_car_view()` builds a temporary car of his model
@@ -1779,7 +1781,7 @@ steps happen at ticks ≡ φ (mod 12) and frames every 9 ticks, i.e. 4 steps per
 * **game_flow**: `503f` calls `drive_to` (cruise) with `DS:0284`, then `bob_drive_in`/`gas_station`,
   adds the clock costs; reads `DS:0282` (`|2` King beaten → ending, `|4` jailed) and the counters
   `DS:4970–4976`; save games must include `DS:4970–4976`, `DS:817D`, the opponent table `DS:7FF8…`
-  (`status`, `races`, `wins`, `custom`, `paint`, `rerolled`, `model`) and the car/part records.
+  (`status`, `races`, `wins`, `custom`, `sticker`, `rerolled`, `model`) and the car/part records.
 * **garage**: car/part/model records (§3.3), `car_max_speed` for "Max speed" (`79eb`), `car_is_runnable`
   `7ee6`, `garage_new_car 4036`, `garage_remove_car 43bf`, `part_value 4386`, `reroll_opponent_car 542e`.
   Engine and transmission wear grow during races (§4.7), tyre wear after races (§4.9); timing drifts.
@@ -1789,5 +1791,5 @@ steps happen at ticks ≡ φ (mod 12) and frames every 9 ticks, i.e. 4 steps per
 * **sound**: the ISR sound part, `sfx_engine_start/stop` (`0f38:7001`, `7741`), siren `7728`, screech
   `790f`, squeal `DS:58DA`, off-road `DS:5E0E`.
 * **platform**: timer install, keyboard map `DS:4766`, joystick calibration, mouse, `DS:8ACC`.
-* **race_render**: track arrays in `389b`, `road_frame 2645:213d`, `road_advance 2645:1efc`,
-  `road_collide 2645:206b`, lateral model (`DS:7D36`, `7D3C`), opponent sprite and poses.
+* **race_render**: track arrays in `389b`, `road_step 2645:213d`, `road_advance_segment 2645:1efc`,
+  `road_edge_collision 2645:206b`, lateral model (`DS:7D36`, `7D3C`), opponent sprite and poses.

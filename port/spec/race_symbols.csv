@@ -1,0 +1,396 @@
+kind,address,name,type,notes
+func,0000:8d26,drive_to,far void(),cruise to the DS:0284 destination
+func,0000:8d9c,opp_palette_set,far void(int),EGA palette regs 0Ch/03h from DS:50C2
+func,0000:8e2d,drive_run,far int(),car colours + race_run
+func,0000:8ea8,race_logic,far uint(),per-frame cruise/race state machine
+func,0000:914c,waitress_toggle,near int(int;int;int;int),car-hop at Bob's (likely)
+func,0000:9256,str_drop_last_word,near void(char*),
+func,0000:92a4,opponent_show,near void(int;...),opponent name and car at Bob's (likely)
+func,0000:9524,model_class3,near int(int),class byte -> 0/1/2
+func,0000:9556,king_status,near int(),0 = King accepts; 1-5 = refusal reason
+func,0000:95f1,king_chance,near int(),% chance that the King appears
+func,0000:9646,opp_sort,near void(int),opponent candidates by top-speed difference
+func,0000:984e,pick_opponent,near int(int;int),random opponent or the King (0x15)
+func,0000:98ba,opponent_load,near void(int),current opponent pointers + random paint/customising
+func,0000:9a27,opponent_select,near void(int;int;int),
+func,0000:9a83,opp_known_list,near void(int*;int*;int*),
+func,0000:9af4,opponent_search,near int(int),"""Looking for"" by name"
+func,0000:9bc5,challenge_accept,near int(int),opponent accepts the bet
+func,0000:9d6d,challenge,near int(int),race type + bet + King rules
+func,0000:a0f8,bob_hotspots,near void(int;int),(likely)
+func,0000:a265,opponent_car_view,near void(),"""See it"""
+func,0000:a35c,girl_frame,near void(...),
+func,0000:a416,dancing_girl,near void(),LIB2 #225 animation
+func,0000:a544,ending_king,near void(),final sequence after the King's road race (likely)
+func,0000:ab8b,bob_drive_in,far void(),Bob's Drive-In main loop
+func,0000:b045,jail_hotspots,near void(int;byte),(guess)
+func,0000:b08c,jail,far void(),jail screen (likely)
+func,0000:b3ca,gas_hotspot_find,near int(int),(likely)
+func,0000:b425,gas_hotspots_apply,near void(),(likely)
+func,0000:b456,gas_hotspots_clear,near void(),(likely)
+func,0000:b49c,gas_hotspot_set,near void(int;int;int;int;int),(likely)
+func,0000:b4de,gas_hotspots_a,near void(),(likely)
+func,0000:b525,gas_hotspots_b,near void(),(likely)
+func,0000:b552,gas_hotspots_c,near void(),(likely)
+func,0000:b59b,gas_hotspots_d,near void(),(likely)
+func,0000:b617,gas_hotspots_none,near void(),(likely)
+func,0000:b61b,gas_draw_pump,near void(void*;int),(guess)
+func,0000:b717,gas_leave,near void(void*),
+func,0000:b8a1,gas_station,far void(),(likely)
+func,0000:bed4,tires_replace,near int(),
+func,0000:bf94,ticket_show,near void(),LIB2 #110
+func,0000:c1d8,crash_show,near void(),LIB2 #259
+func,0000:c407,finish_stats,far void(),
+func,0000:c497,race_msg,near void(),
+func,0000:c52c,engine_blown,near void(int),
+func,0000:c5ac,trans_blown,near void(int),
+func,0000:c613,race_results,near uint(),returns 1..4
+func,0000:cdaf,phys_reset,near void(phys*),
+func,0000:cf5c,opponent_setup,near void(),
+func,0000:d031,race_start,near void(),
+func,0000:d1de,opp_gear,near void(int;phys*),
+func,0000:d29d,opp_ai,near void(),
+func,0000:d544,speed_to_step,far int(int),eighths of a segment per frame
+func,0000:d624,player_advance,near void(),
+func,0000:d67d,opp_advance_steer,near void(),
+func,0000:d992,police_spawn,near void(),real end 0000:da24
+func,0000:da25,race_step,far void(),
+func,0000:dcbe,car_setup,near void(car*;phys*),gear ratios and rpm curves (8087 emulator code)
+func,0000:e0e2,model_car_setup,near void(int;phys*),
+func,0000:e218,car_max_speed,near int(int),real end 0000:e569 (index says e4f5)
+func,0000:2374,race_stop_inputs,far void(),
+func,0000:238c,timer_isr_race,interrupt,sound + player physics every 12th tick (physics from 0000:253b); see platform/sound
+func,0000:1aad,race_isr_install,far void(),see platform
+func,0000:1b27,race_isr_remove,far void(),see platform
+func,0f38:7b22,race_run,far int(),cruise/race frame loop
+func,0f38:000a,dash_restore_rect,near void(int;int;int;int;int),
+func,0f38:0098,dash_copy_rect,near void(int;int;int;int;int),
+func,0f38:0137,speedo_points,far void(int;int*;int*;int*;int*),
+func,0f38:01d2,speedo_init,far void(int),
+func,0f38:02ae,tach_points,far void(int;int*;int*;int*;int*),
+func,0f38:0349,tach_init,far void(int),
+func,0f38:0425,needle_update,far int(int;int;int),
+func,0f38:05f2,clock_draw,far void(),
+func,0f38:0f53,wheel_load,far void(),
+func,0f38:1094,wheel_knob_crash,far void(int),(likely)
+func,0f38:1130,wheel_draw,far void(int;int;far*),
+func,0f38:12f7,shifter_draw,far void(int;int),
+func,0f38:14f2,shifter_knob,far void(far*;phys*),
+func,0f38:5eb6,rand,far int(int),three combined LCGs; n<=0 reseeds
+func,0f38:22e9,gear_label,far void(int),
+func,0f38:7728,siren_set,far void(int),DS:58DC
+func,0f38:790f,screech,far void(),
+func,0f38:21c0,money_add,far void(int),
+global,DS:78E0,player_phys,phys (0xC2 bytes),player car-physics block; +00 speed (mph)
+global,DS:78E2,player_steer_in,i16,
+global,DS:78E4,player_wheel,i16,steering wheel +-0x18; race_render.md name: wheel_pull
+global,DS:78EA,player_blowout_seg,i16,
+global,DS:78EC,player_tire_slip,i16,
+global,DS:78EE,player_rpm,i16,0x5DC..0x1644
+global,DS:78F4,player_rpm_up,i16,
+global,DS:78F6,player_rpm_down,i16,
+global,DS:78F8,player_gear,i16,0 = neutral
+global,DS:78FA,player_gear_dirty,i16,
+global,DS:78FC,player_ngears,i16,
+global,DS:78FE,player_redline,i16,
+global,DS:7900,player_automatic,i16,
+global,DS:7902,player_auto_shift_rpm,i16,
+global,DS:7904,player_auto_mode,i16,1 N / 2 D
+global,DS:7914,player_ratio,i16[5],rpm per mph
+global,DS:791E,player_grip,i16,
+global,DS:7920,player_cur_ratio,i16,
+global,DS:7922,player_band,i16,
+global,DS:7924,player_curve,8-byte[5][3],{rpm_lo;rpm_hi;up;down}
+global,DS:799C,player_result,u16,result flags
+global,DS:799E,player_steps_at_stop,i16,
+global,DS:79A0,player_steps,i16,physics steps (6.0688 per s)
+global,DS:79E2,opp_phys,phys (0xC2 bytes),opponent block; +12 band_hi +14 band_up
+global,DS:79F0,opp_rpm,i16,
+global,DS:79FA,opp_gear_no,i16,
+global,DS:7A9E,opp_result,u16,
+global,DS:0284,drive_dest,i16,1 garage / 2 Bob's / 3 gas / 6 jail
+global,DS:0282,game_end_flags,u16,|2 King beaten / |4 jailed
+global,DS:05CC,menu_timeout,u32,
+global,DS:05F8,ticks,u32,72.8 Hz
+global,DS:05FC,game_clock,u32,
+global,DS:0600,ticks18,u32,18.2 Hz
+global,DS:0608,tick_div4,u8,
+global,DS:0609,phys_div3,u8,
+global,DS:06E6,limiter_count,i16,
+global,DS:06E8,phys_busy,u8,
+global,DS:06E9,fire_prev,u8,
+global,DS:0610,demo,i16,
+global,DS:0612,auto_drive,i16,
+global,DS:4718,joy_x,i16,
+global,DS:471A,joy_y,i16,
+global,DS:471C,joy_buttons,u8,
+global,DS:471D,joy_present,u8,
+global,DS:4722,joy_x_lo,i16,
+global,DS:4724,joy_x_hi,i16,
+global,DS:4726,joy_y_lo,i16,
+global,DS:4728,joy_y_hi,i16,
+global,DS:472A,steer_step,i16,
+global,DS:472C,pedal_step,i16,
+global,DS:472E,key_x,i8,
+global,DS:472F,key_y,i8,
+global,DS:4732,fire,u8,bit0 key / bit1 joystick / bit2 mouse
+global,DS:4740,keys_idle,i16,
+global,DS:47CD,shift_request,u8,
+global,DS:47EE,drive_abort,i16,
+global,DS:05E2,mouse_dx,i16,
+global,DS:05E4,mouse_dy,i16,
+global,DS:05EE,mouse_left,u16,
+global,DS:05F0,mouse_right,u16,
+global,DS:05F2,mouse_present,u8,
+global,DS:51D8,cruise_accel,i16[6],
+global,DS:51E2,cruise_ratio,i16[6],
+global,DS:51EC,skip_fx,i16,
+global,DS:58DA,squeal,u16,
+global,DS:58DC,siren,u16,
+global,DS:58E6,has_clock,u16,
+global,DS:5E0E,offroad,u16,race_render.md name: on_shoulder
+global,DS:6C82,cruise_gain,i16,
+global,DS:6CAA,track_end,i16,0x17C drag / 0x3FC road
+global,DS:6CAC,opp_vmax,i16,
+global,DS:6CAE,opp_slack,i16,
+global,DS:6CB0,opp_v80,i16,
+global,DS:6CB2,opp_v70,i16,
+global,DS:6CB4,opp_skill,i16,
+global,DS:6CB6,opp_lat_target,i16,
+global,DS:6CBA,opp_shift_rpm,i16,
+global,DS:7644,avg_speed,i16,
+global,DS:7676,player_won,i16,
+global,DS:755A,police_seg,i16,
+global,DS:7F88,police_state,u16,
+global,DS:787C,tires_blown,u8,
+global,DS:7D40,vs_king,i16,
+global,DS:7D7A,opp_model_ptr,near*,
+global,DS:7D84,opp_rec,near*,
+global,DS:7E8A,opp_seg,i16,
+global,DS:7E8C,opp_seg_frac,i16,race_render.md name: opp_substep
+global,DS:7E8E,opp_seg_step,i16,race_render.md name: opp_step
+global,DS:7E90,opp_lat,i16,race_render.md name: opp_x
+global,DS:7EAA,money,i32,
+global,DS:7EB0,car,near*,current car record
+global,DS:7EB2,car2,near*,
+global,DS:7EC0,race_type,i16,0 drag / 1 road; race_render.md name: long_race
+global,DS:7F82,opp_index,i16,
+global,DS:7F86,opp_present,u16,
+global,DS:7648,opp_model,i16,
+global,DS:79A2,bet_kind,i16,
+global,DS:79A4,bet_amount,i16,
+global,DS:79A6,race_state,i16,
+global,DS:7D66,lights_green,i16,race_render.md name: start_light_green
+global,DS:8278,bet_button,i16,
+global,DS:82BC,distance,i32,
+global,DS:82C2,wheel_shown,i16,
+global,DS:82C6,slow_cpu,u16,race_render.md name: easy_mode
+global,DS:82C8,pct_covered,i16,
+global,DS:8632,player_ahead,u16,
+global,DS:53E6,stats_done,i16,
+global,DS:8ACA,racing,u8,
+global,DS:8ACC,cpu_class,i16,
+global,DS:8BC4,race_time,float,
+global,DS:4970,races_total,i16,
+global,DS:4972,drag_wins,i16,
+global,DS:4974,road_wins,i16,
+global,DS:4976,king_drag_won,i16,
+global,DS:817D,king_ready,u8,
+global,DS:6C84,waitress_state,i16,
+global,DS:6C88,drink_ordered,i16,
+global,DS:6C86,cand_count,i16,
+global,DS:6C8A,cand,i16[],
+global,DS:51F8,last_pick,i16,
+global,DS:54D0,ai_steps_done,i16,
+global,DS:54DA,ai_brake,i16,
+global,DS:6C62,rand_s1,i16,
+global,DS:6C64,rand_s2,i16,
+global,DS:6C66,rand_s3,i16,
+global,DS:7FF8,opponents,0x12-byte[22],from HOT_DATA
+global,DS:7D86,car_models,10-byte[26],runtime data
+global,DS:4808,part_types,8-byte[],{grade;fits;category;0;name;price}
+global,DS:5504,eng_torque,i16[3][5],
+global,DS:5522,eng_bands,i16[3][2],
+global,DS:552E,intake_bonus,i16[3][5],
+global,DS:554C,eng_bonus,i16[3],
+global,DS:5552,trans_bonus,i16[4],
+global,DS:555A,eng_redline,i16[3],
+global,DS:5560,trans_gears,i16[4],
+global,DS:5568,tire_grip,i16[3],
+global,DS:556E,class_bonus,i16[],
+global,DS:54DC,gear_spread,i16[4][5],
+global,DS:54B2,tire_slip_tab,i16[3][5],
+global,DS:5126,manifold_carbs,i16[8],
+global,DS:02D2,needle_colour,i16,
+global,DS:031E,wheel_knob_xy,u8[49][2],index -24..24
+global,DS:036E,shifter_tab,10-byte[3],
+global,DS:58E8,wheel_pics,i16[3],
+global,DS:50C2,car_colour_pairs,u8[][2],
+global,DS:0482,gear_names,near*[7],
+func,2645:0008,road_fillmode_begin,far void(void),EGA/VGA GC set/reset fill mode on
+func,2645:001d,road_fillmode_end,far void(void),GC back to normal write mode
+func,2645:0034,ega_hline,"far void(int x1,int x2,int y,int c)",driver slot DS:78D6; clipped hline x1..x2 inclusive
+func,2645:00e7,ega_fill_rows,"far void(int y,int c)",driver slot DS:78DA; fill rows y..5E52-1
+func,2645:014b,ega_pixel_addr,"near (AX=y,BX=x)->ES:BX,CL",y*40+x/8 in DS:787A
+func,2645:016a,track_rnd,near int(int n),wrapper of 0f38:5eb6 rnd 0..n-1
+func,2645:017a,track_feat_curve_left,near void(void),course feature 1
+func,2645:0293,track_feat_curve_right,near void(void),course feature 2
+func,2645:03a8,track_feat_s_bend_left,near void(void),course feature 10
+func,2645:0539,track_feat_s_bend_right,near void(void),course feature 11
+func,2645:06ca,track_feat_hill,near void(void),course feature 3 (DS:5C20)
+func,2645:075d,track_feat_dip,near void(void),course feature 4
+func,2645:07f2,track_feat_hills_long,near void(void),course feature 5 (DS:5C4C)
+func,2645:0885,track_feat_dips_long,near void(void),course feature 6
+func,2645:091a,track_feat_roadworks_right,near void(void),course feature 7
+func,2645:09f0,track_feat_narrow_bridge,near void(void),course feature 9
+func,2645:0abb,track_feat_roadworks_left,near void(void),course feature 8
+func,2645:0b91,track_build_course,far void(int arg),segments 0x17C..0x45F; layout DS:5E0C (random if arg==100); jump table 2645:0cc8
+func,2645:0d48,track_build_all,far void(void),"new game: page ptrs, town 0..0xB3, race road, specials, then 0b91(100)"
+func,2645:171d,road_set_seg_ptrs,far void(int seg),far ptrs 72EE 8634 7D62 7880 7560
+func,2645:176f,road_proj_x,"far int(int z,int x,int dx)",0xA0-((camX-(x+(z*dx>>2)))<<2)/z
+func,2645:17b1,road_proj_y,"far int(int z,int y,int dy)",((y+z*dy-camY)<<2)/z+0x3C
+func,2645:17ed,road_proj_x_mirror,"far int(int z,int x,int dx)",0x118-(camX-(x+(z*dx>>2)))/z
+func,2645:1828,road_proj_y_mirror,"far int(int z,int y,int dy)",(y+z*dy-camY)/z+0x24
+func,2645:185d,road_state_init,far void(void),"start segment, camera, edges, AI start"
+func,2645:18fb,road_project_front,far void(void),15 front rows -> row tables
+func,2645:1bcc,road_project_mirror,far void(void),8 mirror rows -> row tables
+func,2645:1e9e,road_frame,far void(void),"project, draw, wait >= 9 ticks"
+func,2645:1efc,road_advance_segment,far void(void),"seg += substep>>3, edges, height, autopilot"
+func,2645:206b,road_edge_collision,far int(void),"timer tick: obstacle/off-road test, DS:5E0E shoulder"
+func,2645:2114,road_race_init,far void(void),"clear nudges, 185d, 527a"
+func,2645:2126,road_nudge_heading,far void(int dir),7D3C +=3 / -=3
+func,2645:213d,road_step,far void(void),per-frame step from 0f38:7b22
+func,2645:224e,road_pages_init,near void(void),"back page segment, show page"
+func,2645:2288,road_page_flip,near void(void),"swap 5E3E/5E40, CRTC start"
+func,2645:22fc,blit_clip_y,near void(Rect *r),vertical rect clip
+func,2645:2331,blit_clip_xy,near void(Rect *r),vertical + left clip (srcx += d+7)
+func,2645:2381,road_vline,"near void(int c,int x,int y1,int y2)",clipped vertical line via [78D2]
+func,2645:23f0,clip_set_ymin0,far void(void),5E50 = 0 (UI)
+func,2645:23f7,clip_set_mirror,near void(void),clip 0xF2..0x13D x 0x16..0x2A
+func,2645:2410,clip_set_view,far void(void),clip 0..0x13F x 0x12..0x65
+func,2645:2429,road_load_graphics,far void(void),"load drive-screen pictures, shrunk opponent/police sprites"
+func,2645:2982,road_draw_sky,near void(void),"sky, horizon, ground fill, top road row"
+func,2645:2c0a,shape_draw,"far void(int x,int y,int size,int nsizes,ShapeSize *s,int side)","hline sprite, side -1 mirrored"
+func,2645:2cfc,slope16,"near int(int xa,int ya,int xb,int yb)",((xb-xa)<<4)/(yb-ya)
+func,2645:2d20,quad_fill,"near void(int c,int x0,int x1,int y0,int y1,int y2,int y3)",quad with vertical sides; mode 3 uses uninit accumulator
+func,2645:2f2b,sign,near int(int v),-1/0/1
+func,2645:2f48,road_draw_band_front,far void(int row),road band between row and row-1
+func,2645:324d,road_draw_band_mirror,far void(void),mirror road band
+func,2645:34da,town_walls_front,"near void(int a,int b,int c,int d,int e,int f,int left)","facades, storeys, block ends"
+func,2645:37af,town_walls_mirror,"near void(int a,int b,int c,int d,int e,int f,int left)",mirror version
+func,2645:39de,town_walls_front_left,near void(void),args for 34da
+func,2645:3a0d,town_walls_front_right,near void(void),args for 34da
+func,2645:3a3b,road_draw_row_front,near void(int row),town walls + 2f48
+func,2645:3a57,town_walls_mirror_left,near void(void),args for 37af
+func,2645:3a86,town_walls_mirror_right,near void(void),args for 37af
+func,2645:3ab4,road_draw_row_mirror,near void(void),mirror walls + 324d
+func,2645:3abf,shape_draw_dot,"far void(int x,int y)",UI dot shape DS:60A0
+func,2645:3aeb,scenery_draw_shape,"near void(int x,int y,int depth,int side,int type)","size clamp(9-depth,0,6), shape DS:6078[type]"
+func,2645:3b3a,scenery_draw_hydrant,"near void(int x,int y,int depth,int side)","shape DS:607C, 8 sizes"
+func,2645:3b79,scenery_draw_sign_picture,"near void(int x,int y,int depth,int align,int xclip,int kind)",pre-scaled billboard blit
+func,2645:3ccc,scenery_draw_banner,"near void(int xl,int xr,int ytop,int ybot,int depth,int xclip,uint flags)",overhead banner
+func,2645:3dc3,road_draw_start_light,near void(void),LIB2 #13 retracting
+func,2645:3e3c,road_draw_cockpit_overlay,near void(void),"LIB2 #6, #7"
+func,2645:3edb,mirror_draw_background,near void(void),"LIB2 #9, #243"
+func,2645:3f8d,opponent_draw,near void(void),opponent sprite select/project/blit
+func,2645:43fd,road_draw_mirror,near void(void),rear-view mirror
+func,2645:4b8c,road_draw_frame,far void(void),whole frame into back page + flip
+func,2645:527a,road_first_frame,far void(void),"reset sprite state, 224e, 1e9e"
+func,2645:528c,popcount8,near int(uint8 m),bit count
+func,2645:52b7,pic_alloc_shrunk,"near Pic far *(Pic far *src,uint8 ymask,uint8 xmask)",allocate shrunk picture
+func,2645:5407,pic_shrink_planar,"far Pic far *(Pic far *src,uint8 ymask,uint8 xmask)",VGA/EGA picture shrink by bit masks
+func,2645:55f8,cga_expand_bits,"near void(uint8 m,uint8 *hi,uint8 *lo)",CGA mask expand (likely)
+func,2645:5670,pic_shrink_cga,"far Pic far *(Pic far *,uint8,uint8)",CGA/Hercules shrink (parked)
+func,2645:5885,pic_shrink_tandy,"far Pic far *(Pic far *,uint8,uint8)",Tandy shrink (parked)
+global,389b:33F0,track_left,u16[0x460],L[] left side flags
+global,389b:3CB0,track_right,u16[0x460],R[] right side flags
+global,389b:4570,track_yaw,s16[0x460],road heading per segment
+global,389b:4E30,track_centre,u16[0x460],C[] centre flags
+global,389b:56F0,track_height,s16[0x460],hill offset per segment
+global,DS:5C1E,gc_func_word,u16,high byte = GC data rotate/function (0)
+global,DS:5C20,hill_profile_22,s16[22],hill feature profile
+global,DS:5C4C,hill_profile_38,s16[38],long hill profile
+global,DS:5C98,hill_profile_17,s16[17],first race stretch hills
+global,DS:5CBA,course_len,s16,12 features per layout
+global,DS:5CBC,course_layouts,s16[10][12],course feature codes
+global,DS:5DAC,page1_desc,Pic,page A200 descriptor
+global,DS:5DDC,page2_desc,Pic,page A400 descriptor
+global,DS:5E0C,course_layout,s16,"chosen layout 0..9, saved"
+global,DS:5E10,nudge_right_latch,u16,town heading nudge -3 latch
+global,DS:5E12,nudge_left_latch,u16,town heading nudge +3 latch
+global,DS:5E14,car_class_pics,s16[5][4],opponent picture ids per class
+global,DS:5E3E,back_page,s16,1=A200 else A400
+global,DS:5E40,shown_page,s16,page shown
+global,DS:5E42,view_copy_rect,Rect,non-VGA present rect
+global,DS:5E4E,clip_xmin,s16,clip rect
+global,DS:5E50,clip_ymin,s16,clip rect
+global,DS:5E52,clip_ymax,s16,clip rect
+global,DS:5E54,clip_xmax,s16,clip rect
+global,DS:5E56,shrink_masks_rear,u8[4],57 25 22
+global,DS:5E5A,shrink_masks_far,u8[4],F7 75 52
+global,DS:5E5E,shrink_masks_front,u8[4],75 54 21
+global,DS:5E62,loc_sign_sheet,s16[4],sign sheet picture ids
+global,DS:5E6A,dash_width_front,s16[15],centre dash width per row
+global,DS:5E84,dash_width_mirror,s16[8],all zero
+global,DS:5E9C,sign_sizes,s16[7][3],"billboard srcx,w,h"
+global,DS:5EC6,opp_substep_frac,s16,written by 3f8d only
+global,DS:6078,shape_table,u16[20],road-side shape sets
+global,DS:607C,hydrant_shape,u16,fire hydrant shape set
+global,DS:60A0,dot_shape,u16,UI dot shape
+global,DS:6A2C,seg389b_centre,u16,const 0x389B (also 6A2E..6A38)
+global,DS:6DFE,build_yaw,s16,heading while building
+global,DS:6E00,build_seg,s16,build cursor
+global,DS:6E02,build_yaw_step,s16,2 or 3
+global,DS:6E04,ground_top_y,s16,top of the ground fill
+global,DS:6E06,top_band_row,s16,farthest drawn band row
+global,DS:6E08,row_ptr_xl,u16,row table pointer (group 6E08..6E1E)
+global,DS:6E20,left_ptr,far u16*,&L of current row
+global,DS:6E24,right_ptr,far u16*,&R of current row
+global,DS:6E28,dash_ptr,u16,&dash width of current row
+global,DS:6E2A,opp_sprite_prev2,s16,sprite hysteresis
+global,DS:6E60,pic_start_light,Pic far*,LIB2 #13
+global,DS:70C0,ai_edge_left,s16,left edge 4 segments ahead
+global,DS:70C2,mir_xol,s16[8],mirror row table
+global,DS:70D2,mir_xor,s16[8],mirror row table
+global,DS:72EE,seg_left_ptr,far u16*,&L[seg]
+global,DS:72F2,opp_rear_end,u16,rear-end collision flag
+global,DS:72F4,pic_pillar,Pic far*,LIB2 #6
+global,DS:72F8,row_xl,s16[15],front left edge x
+global,DS:7526,police_sprites,Pic far*[13],police car sprites
+global,DS:7560,seg_yaw_ptr,far s16*,&YAW[seg]
+global,DS:764A,pic_town_skyline,Pic far*,LIB2 #8
+global,DS:7678,page0_ptr,Pic far*,page A000
+global,DS:767E,pic_mountains,Pic far*,LIB2 #267
+global,DS:787A,draw_seg,u16,back page video segment
+global,DS:7880,seg_hgt_ptr,far s16*,&HGT[seg]
+global,DS:7884,row_y,s16[15],front road y
+global,DS:7AAE,start_light_h,s16,start light visible height
+global,DS:7AB0,row_yeye,s16[15],front eye-height y
+global,DS:7ACE,row_xr,s16[15],front right edge x
+global,DS:7D2E,ai_edge_right,s16,right edge 4 segments ahead
+global,DS:7D30,seg,s16,current segment
+global,DS:7D32,substep,s16,sub-step 0..7
+global,DS:7D34,step_per_frame,s16,sub-steps per frame
+global,DS:7D36,cam_x,s16,car lateral position
+global,DS:7D38,cam_y,s16,eye height 0x76C
+global,DS:7D3C,heading,s16,car heading (yaw units)
+global,DS:7D3E,cur_height,s16,HGT[seg]
+global,DS:7D62,seg_centre_ptr,far u16*,&C[seg]
+global,DS:7D7C,opp_sprite,s16,opponent sprite index
+global,DS:7D82,edge_left,s16,left road edge at seg
+global,DS:7F22,mir_xl,s16[8],mirror left edge x
+global,DS:7F8A,row_xol,s16[15],front outer-left x
+global,DS:7FD8,row_xor,s16[15],front outer-right x
+global,DS:8184,pic_mirror,Pic far*,LIB2 #9
+global,DS:8188,page1_ptr,Pic far*,page A200
+global,DS:82B4,page2_ptr,Pic far*,page A400
+global,DS:8634,seg_right_ptr,far u16*,&R[seg]
+global,DS:8638,mir_y,s16[8],mirror road y
+global,DS:864A,mir_yeye,s16[8],mirror eye-height y
+global,DS:865A,mir_xr,s16[8],mirror right edge x
+global,DS:8ACE,opp_sprites,Pic far*[13],opponent sprites
+global,DS:8B7E,pic_mirror_sky,Pic far*,LIB2 #243
+global,DS:8B82,centre_ptr,far u16*,&C of current row
+global,DS:8BC2,opp_alongside,u16,opponent alongside flag
+global,DS:8BCA,pic_hood,Pic far*,LIB2 #7
+global,DS:8BD0,edge_right,s16,right road edge at seg

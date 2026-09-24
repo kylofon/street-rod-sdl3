@@ -1,0 +1,94 @@
+func 0000:0d78: platform=click_clear; sound=ui_request_redraw
+func 0000:1a05: platform=tune_start; sound=music_start
+func 0000:1a7c: platform=tune_rewind; sound=music_rewind
+func 0000:1aad: platform=race_isr_enter; race=race_isr_install; sound=drive_isr_install
+func 0000:1b27: platform=race_isr_leave; race=race_isr_remove; sound=drive_isr_remove
+func 0000:2374: platform=race_ctrl_reset; race=race_stop_inputs
+func 0000:238c: platform=race_isr; race=timer_isr_race; sound=isr_drive
+func 0000:3614: game_flow=pools_init; garage=pools_init; platform=pools_reset
+func 0000:39c0: game_flow=title_and_setup; platform=lib_phase2
+func 0000:3a83: game_flow=wait_ticks; platform=wait_ticks_or_input
+func 0000:a544: game_flow=ending_sequence; race=ending_king
+func 0000:e218: garage=top_speed; race=car_max_speed
+func 0f38:5eb6: platform=rnd; race=rand
+func 0f38:790f: race=screech; sound=fx_hit
+func 2645:0008: race=road_fillmode_begin; video=ega_setreset_on
+func 2645:001d: race=road_fillmode_end; video=ega_setreset_off
+func 2645:0034: race=ega_hline; video=ega_hspan
+func 2645:014b: race=ega_pixel_addr; video=ega_pixel_addr2
+global DS:0254: platform=vga_split; video=g_vga
+global DS:0280: game_flow=sw_nouemem; platform=no_ega_park
+global DS:0282: game_flow=game_over; garage=end_flags; race=game_end_flags
+global DS:0284: game_flow=location; garage=location; race=drive_dest
+global DS:0440: platform=ega_palette; video=pal_shadow
+global DS:0452: platform=black_palette; video=pal_black_tab
+global DS:05CC: platform=wait_deadline; race=menu_timeout
+global DS:0600: game_flow=rt_ticks; platform=bios_ticks; race=ticks18
+global DS:0604: game_flow=rt_base; garage=clock_origin
+global DS:0608: platform=chain_count; race=tick_div4
+global DS:0609: platform=race_step_count; race=phys_div3
+global DS:0610: game_flow=demo; garage=demo_mode; platform=demo_active; race=demo
+global DS:0612: game_flow=sw_auto; platform=auto_drive; race=auto_drive
+global DS:06E8: platform=isr_race_busy; race=phys_busy
+global DS:4722: platform=joy_thr_x_lo; race=joy_x_lo
+global DS:4724: platform=joy_thr_x_hi; race=joy_x_hi
+global DS:4726: platform=joy_thr_y_lo; race=joy_y_lo
+global DS:4728: platform=joy_thr_y_hi; race=joy_y_hi
+global DS:472A: platform=cursor_x; race=steer_step
+global DS:472C: platform=cursor_y; race=pedal_step
+global DS:472E: platform=kbd_dir_x; race=key_x
+global DS:472F: platform=kbd_dir_y; race=key_y
+global DS:4732: platform=click_held; race=fire
+global DS:4733: platform=cursor_shown; video=g_ptr_show
+global DS:4740: platform=kbd_dir_lock; race=keys_idle
+global DS:47CD: platform=click_edge; race=shift_request
+global DS:47CE: platform=sound_on; sound=snd_enabled
+global DS:47CF: platform=speaker_on; sound=spk_gate
+global DS:47EE: platform=click_seen; race=drive_abort
+global DS:4970: game_flow=races_run; garage=race_wins; race=races_total
+global DS:4976: game_flow=king_man_beaten; race=king_drag_won
+global DS:49E0: game_flow=list_items; garage=list_buf
+global DS:4C14: platform=vram_pool_base; video=g_vram_pool_base
+global DS:4C18: platform=vram_pool_used; video=g_vram_pool_used
+global DS:4C20: game_flow=title_pics; platform=big_pics
+global DS:4C28: game_flow=game_pics; platform=resident_pics
+global DS:4F58: game_flow=headline; garage=news_pic
+global DS:4F5A: game_flow=headline_day; garage=news_day
+global DS:50C2: garage=PAINT; race=car_colour_pairs
+global DS:5126: garage=CARBS_PER_MANIFOLD; race=manifold_carbs
+global DS:552E: garage=CARB_PTS; race=intake_bonus
+global DS:554C: garage=ENGINE_PTS; race=eng_bonus
+global DS:5552: garage=TRANS_PTS; race=trans_bonus
+global DS:556E: garage=CLASS_PTS; race=class_bonus
+global DS:58D0: garage=music_off; sound=music_enabled
+global DS:58DA: race=squeal; sound=squeal_on
+global DS:58DC: race=siren; sound=siren_on
+global DS:5B8A: platform=drv_table_tandy; video=g_vec_tandy
+global DS:5BD0: platform=drv_table_ega; video=g_vec_ega
+global DS:5C1E: race=gc_func_word; video=g_gc3
+global DS:5E0C: game_flow=unk_5e0c; race=course_layout
+global DS:5E4E: race=clip_xmin; video=g_span_xmin
+global DS:5E50: race=clip_ymin; video=g_span_ymin
+global DS:5E52: race=clip_ymax; video=g_span_ymax
+global DS:5E54: race=clip_xmax; video=g_span_xmax
+global DS:68E2: platform=pages_seg; video=g_desc_seg
+global DS:6C62: platform=rnd_s1; race=rand_s1
+global DS:6C64: platform=rnd_s2; race=rand_s2
+global DS:6C66: platform=rnd_s3; race=rand_s3
+global DS:70E2: game_flow=title_resident; platform=libs_preloaded
+global DS:787A: race=draw_seg; video=g_draw_seg
+global DS:7D86: garage=MODELS; race=car_models
+global DS:7EB0: game_flow=cur_car; garage=cur_car; race=car
+global DS:7EB2: game_flow=car_list; garage=other_cars; race=car2
+global DS:7EB4: game_flow=car_freelist; garage=car_free_list
+global DS:7EB6: game_flow=car_count; garage=cars_used
+global DS:7EB8: game_flow=spare_parts; garage=spares
+global DS:7EBA: game_flow=part_freelist; garage=part_free_list
+global DS:7EBC: game_flow=part_count; garage=parts_used
+global DS:7FF8: game_flow=opponents; garage=OPPONENTS; race=opponents
+global DS:8238: platform=planes; video=g_nplanes
+global DS:823A: platform=pixel_shift; video=g_px_shift
+global DS:82C6: platform=slow_machine; race=slow_cpu
+global DS:82CA: game_flow=hall; platform=hall_records
+global DS:8ACC: platform=cpu_speed; race=cpu_class
+global DS:8BCE: game_flow=sw_demo; platform=demo_switch

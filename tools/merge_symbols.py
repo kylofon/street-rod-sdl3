@@ -35,9 +35,14 @@ for path in sorted(glob.glob(os.path.join(ROOT, 'port', 'spec', '*_symbols.csv')
 
 # Image-offset ranges owned by each spec (port/RE_GUIDE.md, "Subsystem split"); elsewhere, and for
 # globals, PRIORITY decides.
-RANGES = []                                   # filled in with the subsystem split (RE_GUIDE.md)
+RANGES = [('platform', 0x00000, 0x0066F), ('platform', 0x00D58, 0x02E93),
+          ('game_flow', 0x02E93, 0x03C8D), ('garage', 0x03C8D, 0x08D26),
+          ('race', 0x08D26, 0x0E569), ('platform', 0x0E569, 0x0E6C0),
+          ('video', 0x0E6C0, 0x0F380),                      # 0e6c, 0e92 blit helpers
+          ('video', 0x21A00, 0x24620), ('video', 0x24620, 0x26450),  # 21a0 driver, 2462..2634
+          ('race', 0x26450, 0x2BEB0)]                       # 2645 road renderer
 # Most authoritative first: phase 3 specs over phase 2 format docs over the phase 1 seed.
-PRIORITY = ['race', 'platform', 'sound', 'game_flow', 'garage', 'formats', 'seed']
+PRIORITY = ['video', 'platform', 'sound', 'race', 'game_flow', 'garage', 'formats', 'seed']
 
 
 SEGS = [int(x, 16) for x in json.load(open(os.path.join(ROOT, 'port', 'sr_functions.json')))['segments']]

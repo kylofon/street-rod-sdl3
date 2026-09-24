@@ -315,7 +315,7 @@ blit (`21a0:1cd5`), `DS:78D2` line(x1,y1,x2,y2,c) (`21a0:23bc`), `DS:78D6` hline
 | DS:7E8A / 7E8C | opp_seg / opp_substep | s16 | opponent position | race code | 3f8d, 4b8c, 43fd |
 | DS:7E8E | opp_step | s16 | opponent sub-steps per frame | race code | 3f8d |
 | DS:7E90 | opp_x | s16 | opponent lateral position | race code | 3f8d, 1efc |
-| DS:7EC0 | long_race | u16 | 0: finish at seg 0x17B, 1: at 0x3FB | game flow | 1efc |
+| DS:7EC0 | race_type | u16 | 0 drag race (finish at seg 0x17B), 1 road race (0x3FB); set by `challenge 0000:9d6d` (race.md) | 9d6d | 1efc |
 | DS:7F22 / 865A | mir_xl / mir_xr | s16[8] | mirror left / right edge x | 1bcc | mirror |
 | DS:7F8A / 7FD8 | row_xol / row_xor | s16[15] | front: x of 0x44C / 0xE74 | 18fb | 2f48, 34da, objects |
 | DS:8184 | pic_mirror | Pic far* | LIB2 #9 (80×27 mirror) | 2429 | 3edb, 43fd |
@@ -323,12 +323,12 @@ blit (`21a0:1cd5`), `DS:78D2` line(x1,y1,x2,y2,c) (`21a0:23bc`), `DS:78D6` hline
 | DS:8228 | light_flag | u16 | set to 1 by 3dc3 when `7D66` | 3dc3 | 0f38:7b22 |
 | DS:8236 | video_driver | s16 | −2 = EGA/VGA | startup | many |
 | DS:82B4 | page2_ptr | Pic far* | page 2 (A400) | 0d48 | blits |
-| DS:82C6 | easy_mode | u16 | `DS:8ACC < 4` (0000:0659): sparser scenery, longer dash period, yaw step 2, town speed 6 | 0000:0659 | 0b91, 0d48, 213d |
+| DS:82C6 | slow_cpu | u16 | `DS:8ACC < 4` (0000:0659, slow machine): sparser scenery, longer dash period, yaw step 2, town speed 6 | 0000:0659 | 0b91, 0d48, 213d |
 | DS:8638 / 864A | mir_y / mir_yeye | s16[8] | mirror road y / eye-height y | 1bcc | mirror |
 | DS:8646 | — | s16 | = `mir_y[7]` (used by 3edb for the mirror horizon strip) | 1bcc | 3edb |
 | DS:8634 | seg_right_ptr | far u16* | &R[seg] | 171d | 4b8c, 43fd |
 | DS:8ACA | in_race | u8/u16 | ≠0 during races (0 = cruising the town) | game | many |
-| DS:8ACC | opp_level | s16 | opponent level; ≥4 enables sprite hysteresis and wider rear-end window | game | 3f8d, 0000:0659 |
+| DS:8ACC | cpu_class | s16 | CPU speed class from the start-up loop (`0000:05c6`, loops per BIOS tick / 950, ≥ 1); ≥ 4 enables sprite hysteresis and the wider rear-end window (race.md §7) | 0000:066f | 3f8d, 0000:0659 |
 | DS:8ACE | opp_sprites | Pic far*[13] | opponent sprites §5.3 | 2429 | 3f8d |
 | DS:8B7E | pic_mirror_sky | Pic far* | LIB2 #243 | 2429 | 3edb |
 | DS:8B82 | centre_ptr | far u16* | &C of the current row | 4b8c, 43fd | 2f48, 324d, 34da, 37af, 3ccc |
@@ -1390,4 +1390,209 @@ void ega_fill_rows(int y, int c)                  /* 2645:00e7 = [DS:78DA] */
 On the hardware both write through the set/reset register (colour in GC reg 0, enable 0x0F, function from
 `DS:5C1F` = 0 = replace); the fill does a `rep movsb` of the rows onto themselves (latch read + set/reset write).
 
-<!--PART3-->
+-----------------------------------------------------------------------------------------------
+
+## 5. File formats / in-exe tables
+
+All tables are initialised data in DGROUP (image offset `0x3E960 + DS`) or in the far data segments `2fa6`/`3324`
+(image offset `seg*16 + off`). Dumped with python from `work/SR_unp.exe`.
+
+### 5.1 Course data
+
+`DS:5CBC` — 10 layouts × 12 feature codes (`DS:5CBA` = 12). Codes: 1 curve left, 2 curve right, 3 hill, 4 dip,
+5 long hills, 6 long dips, 7 road works right lane, 8 road works left side, 9 narrow bridge, 10 S-bend (left first),
+11 S-bend (right first).
+
+| layout | features |
+|---|---|
+| 0 | 2 3 1 7 4 10 5 8 6 2 9 1 |
+| 1 | 11 4 8 1 6 9 2 5 7 2 3 1 |
+| 2 | 1 5 1 3 8 11 6 7 2 4 9 1 |
+| 3 | 3 1 4 9 2 6 8 1 3 8 10 2 |
+| 4 | 10 9 5 1 6 2 3 7 4 2 8 2 |
+| 5 | 2 3 8 10 5 11 4 7 1 6 9 2 |
+| 6 | 1 5 9 1 4 2 3 10 8 4 1 9 |
+| 7 | 2 4 7 11 2 5 8 4 1 7 6 2 |
+| 8 | 2 6 8 10 6 1 3 7 5 1 4 9 |
+| 9 | 1 3 1 6 1 4 9 10 6 8 2 3 |
+
+Height profiles (s16): `DS:5C20[22]` = 1 2 3 4 4 4 4 3 2 1 0 0 −1 −2 −3 −4 −4 −4 −4 −3 −2 −1;
+`DS:5C4C[38]` = 1 2 3 4 4 4 4 3 2 1 0 0 −1 −2 −3 −4 −5 −5 −5 −5 −5 −5 −4 −3 −2 −1 0 0 1 2 3 4 4 4 4 3 2 1;
+`DS:5C98[17]` = 1 2 3 3 3 2 1 0 0 0 −1 −2 −3 −3 −3 −2 −1. One unit = 4 screen pixels of vertical shift.
+
+### 5.2 Segment flag bits
+
+`C[i]` (centre, `389b:4E30`):
+
+| bit | meaning | set by | used by |
+|---|---|---|---|
+| 0x0001 | town/"shoulder" segment: shoulders and sidewalks drawn, road area left in the ground colour, town walls, eye-height row computed | 0d48 (town) | 2f48, 324d, 34da/37af, objects (cross), 3ccc, 18fb/1bcc |
+| 0x0002 | telephone pole on the right (shape 9); collision on the right shoulder | 0d48 | objects, 206b |
+| 0x0004 | intersection (cross street): band skipped, no objects | 0d48 | 2f48, 324d, 34da/37af, 4b8c/43fd |
+| 0x0008 | centre dash on this segment (every 4th/8th; every segment in curves = solid line) | 0d48, 0b91, ramps | 2f48, 324d |
+| 0x0010 | white band across the road (finish line) | 0d48 | 2f48 |
+| 0x0020 | left side closed: left edge 0x7D0 | feature 8 | 18fb, 1bcc, 1efc |
+| 0x0040 | right lane closed: right edge 0xAF0 | feature 7 | same |
+| 0x0080 | one lane (bridge): 0x7D0…0xAF0 (priority 0x80 > 0x20 > 0x40) | feature 9 | same |
+| 0x0100 | speed-limit sign (shape 5) right | 0d48 (seg 0x181) | objects |
+| 0x0200 / 0x0400 | chevron `<` / `>` sign (shapes 0x10 / 0x11) right | features 1 / 2 | objects |
+| 0x0800 | "road narrows" sign (shape 0x0F) right | feature 9 | objects |
+| 0x1000 | overhead banner "CITY LIMITS" (shape 0x0D) | 0d48 (0x17B) | 3ccc, 206b, eye row |
+| 0x2000 | overhead banner with the location sign sheet picture (#258 in races) | 0d48 (0x3FB) | 3ccc |
+| 0x4000 | town: billboard picture "Vegas Gambler" (#261) on posts; race: route 48 arrow (shape 0x0C) | 0d48 | 3ccc |
+| 0x8000 | town: billboard "Play Block Out" (#262); race: route 69 arrow (shape 0x0E) | 0d48 | 3ccc |
+
+`L[i]` / `R[i]` (sides, `389b:33F0` / `389b:3CB0`):
+
+| bit | race road (cross = 0) | town (cross = 1) |
+|---|---|---|
+| 0x0001 | edge post (shape 1) at the road edge | location sign picture (kind 1) half-way between road y and eye y; **town heading nudge** (213d: `L[seg+7]`, `R[seg+6]`); `0000:8ea8` tests `L` bit 0 |
+| 0x0004 | small bush (shape 7) at the edge | upper storey (`F&4`) |
+| 0x0008 | bush (shape 8) at the edge | tall upper storey |
+| 0x0010 | — | wall colour 2 (block end) |
+| 0x0020 | palm (shape 0) at the outer edge | palm at the road edge |
+| 0x0040 | tree (shape 0x0A): L at XOL−((XL−XOL)>>1), R at XOR | fire hydrant (`607C`) at the corner |
+| 0x0080 | big tree (shape 0x0B): L at XOL, R at XOR+((XOR−XR)>>1) | sidewalk with a colour-9 strip (instead of a building) |
+| 0x0100 | shrub (shape 4) at the outer edge (0x0200: twice as far out) | shrub at the road edge |
+| 0x0800 | "road work ahead" sign (shape 3) | same |
+| 0x1000 | barricade (shape 6); collision | same |
+| 0x2000 / 0x4000 | R only: winding-road signs (shapes 0x12 / 0x13) | — |
+
+### 5.3 Pictures (LIB2 index = id − 1000; `tools/srlib.py Game/LIB2`)
+
+| id / LIB2 # | size | use |
+|---|---|---|
+| 1005 / #5 | 320×52 | sky, stored at page-1 rows 102…153; the bottom `hy−30` rows are shown |
+| 1267 / #267 | 320×37 | horizon panorama (mountains), page-1 rows 163…199; town: #8 (184×4, rooftops) is masked onto it at (44,12) |
+| 1258, 1237, 1236, 1238 / #258, #237, #236, #238 | 264×43 | sign sheets, 7 sizes side by side (`DS:5E9C`): "County Line" (race banner), "Garage", "Drive-In", "Gus Gas" (town location signs) — page-2 rows 102…144 |
+| 1261 / #261, 1262 / #262 | 264×43 | town billboards "Try Vegas Gambler", "Play Block Out" — page 0 rows 100…142 / 143…185 |
+| 1006 / #6 | 88×82 m | left A-pillar, at (0,18) |
+| 1007 / #7 | 232×5 m | hood edge, at (88,95) |
+| 1009 / #9 | 80×27 | rear-view mirror frame/background, at (240,18) |
+| 1243 / #243 | 80×11 | mirror sky; 2 rows at the mirror horizon |
+| 1013 / #13 | 48×32 m | drag start light, 24-pixel halves, at (130,18) |
+| `DS:5E14[cls][0..3]` | | opponent class `cls` = byte `DS:8DF0 + 10*DS:7648`: {side, rear 3/4, rear, front} = class 0: 1003 1004 1057 1091; 1: 1010 1012 1011 1239; 2: 1010 1247 1248 1092; 3: 1010 1249 1250 1251; 4: 1010 1253 1252 1254 |
+| 1241, 1242, 1246 / #241, #242, #246 | | police car rear (lights on/off) and front (race code) |
+
+### 5.4 Road-side shapes ("hline sprites")
+
+`DS:6078[20]` → `ShapeSet {u16 nsizes; u16 sizes}` (near) → `ShapeSize[nsizes] {s16 nlines; u16 off; u16 seg}` →
+`nlines` × `HLine {s8 dx; s8 dy; s8 w; s8 colour}` in far segments `2fa6` (types 0–8, the hydrant and the dot) and
+`3324` (types 9–19). A line covers `x+dx … x+dx+w` (inclusive; `w = 0` is one pixel) at row `y+dy`; `dy ≤ 0` (base
+at y). Sizes 0 (far) … 6 (near); the hydrant has 8. Port: copy the tables from the exe image at load time (as the
+other specs do) rather than transcribing them.
+
+| type | ShapeSet | sizes (lines per size) | picture |
+|---|---|---|---|
+| 0 | 5EF2 | 13 22 47 88 127 165 245 | palm tree |
+| 1 | 5F20 | 2 2 4 6 9 11 14 | edge post (reflector) |
+| 2 (= `607C`) | 5F54 | 15 20 36 43 49 64 73 88 | fire hydrant |
+| 3 | 5F82 | 10 25 33 56 97 156 165 | "ROAD WORK AHEAD" diamond |
+| 4 | 5FB0 | 3 5 10 22 38 53 65 | shrub |
+| 5 | 5FDE | 17 31 47 75 109 175 211 | "SPEED 35 LIMIT" |
+| 6 | 600C | 20 40 62 89 114 137 155 | striped barricade |
+| 7 | 603A | 7 7 7 12 18 32 46 | small bush |
+| 8 | 6068 | 22 22 22 46 59 71 95 | bush |
+| 9 | 60CC | 5 21 34 48 64 75 95 | telephone pole |
+| 0x0A | 60FA | 21 35 58 87 132 181 199 | tree |
+| 0x0B | 6128 | 18 33 71 121 167 229 306 | big tree |
+| 0x0C | 6156 | 7 17 35 53 73 105 127 | overhead: left arrow + route 48 shield |
+| 0x0D | 6184 | 12 38 77 103 129 161 195 | overhead: "CITY LIMITS" |
+| 0x0E | 61B2 | 7 19 35 51 71 103 127 | overhead: up arrow + route 69 shield |
+| 0x0F | 61E0 | 21 42 50 74 109 145 157 | "road narrows" |
+| 0x10 | 620E | 8 17 27 41 60 71 84 | chevron `<` (left curve) |
+| 0x11 | 623C | 8 17 27 41 60 71 83 | chevron `>` |
+| 0x12 | 626A | 10 25 37 48 65 86 101 | winding road (left first) |
+| 0x13 | 6298 | 10 25 37 48 65 86 101 | winding road (right first) |
+| `60A0` | 6072 | 5 | 5×5 cyan dot (UI, `3abf`) |
+
+The colour indices in the shapes (foliage 13, trunks 14, signs 15/4/1/2) are palette indices; see §8 about the palette.
+
+### 5.5 Other constants
+
+`DS:5E6A[15]` = 8 6 5 4 3 2 2 2 1 1 1 0 0 0 0 (front dash width / banner post thickness − 1, by row);
+`DS:5E84[8]` = 0 (mirror). `DS:5E9C` sign sizes (§3). `DS:5E56` = 57 25 22, `DS:5E5A` = F7 75 52, `DS:5E5E` = 75 54 21.
+`DS:5DAC` / `DS:5DDC` / `2fa3:0000` page descriptors: `{0x140, 0xC8, 0x1F40, 0 × 12, 0xFF, 0, 0, 0, seg (A200/A400/A000), 0, 0, 0x28, 0xFE}`.
+
+-----------------------------------------------------------------------------------------------
+
+## 6. Hardware / DOS dependencies → SDL3
+
+| Where | Original | SDL3 port |
+|---|---|---|
+| 0008, 001d | GC regs 0/1/3/8 (set/reset fill mode, restore) | no-ops; `hline`/`fill_rows` write the colour index directly into the planar model (`platform/ega`) |
+| 0034 (`[78D6]`) | planar hline through set/reset + bit mask, segment `DS:787A` | write the pixel range into the back page of `platform/ega` (page = `787A` A200/A400) with the same clipping |
+| 00e7 (`[78DA]`) | `rep movsb` of whole rows under set/reset | fill rows `y … 5E52-1`, all 320 pixels, of the back page |
+| 2288/224e → `21a0:182e` | CRTC start address high = page<<5 (A200/A400), then waits for the start of vertical retrace (port 3DAh) | set the ega module's display start; present the frame; the retrace wait = wait for the next 70 Hz vblank (host), or simply present — frame pacing is dominated by the 9-tick wait |
+| 1e9e | busy-wait on `DS:05F8` (timer ISR ticks) | loop `host_pump()` until the tick counter reaches the target (PORTING.md) |
+| 206b | runs inside the timer ISR | call from the host tick handler, like the original, every tick |
+| blits `[78A2]`/`[78AA]`, line `[78D2]` | driver `21a0` | video spec (page-to-page and picture blits must accept source rows ≥ 102 and pages A000/A200/A400) |
+| split screen | `21a0:0014` (called by 0f38:7b22) | video spec; the view pages are A200/A400, the lower split shows A000 |
+
+No interrupts, BIOS calls or DOS calls in this segment besides the port I/O above.
+
+-----------------------------------------------------------------------------------------------
+
+## 7. Timing
+
+* **Per frame** (drive loop `0f38:7b22` → `road_step`): steering → heading; one complete projection + draw into the
+  back page; page flip at the next vertical retrace; then **wait until 9 ticks of the 72.8 Hz timer have passed since
+  the start of drawing** (`road_frame`). With a fast machine the game runs at 72.8/9 ≈ **8.09 frames/s**; on a slow
+  machine (drawing > 9 ticks) the frame rate drops and the car moves less per second, because all movement
+  (`7D34` sub-steps, `DS:7AAE` light, heading nudges, drift) is **per frame**. Faithful port: keep the 9-tick lock,
+  do not interpolate. (If the sound code reprograms the PIT — PORTING.md — the tick rate and therefore the frame rate
+  change with it; see §8.)
+* Speed: in town the car moves 4 (or 6) sub-steps per frame = ½ (¾) segment per frame. In races `7D34` comes from
+  `0000:d544(speed)` (race spec).
+* **Per timer tick**: `road_edge_collision` (from the ISR 0000:238c) — reads `7D36`, `7D82`, `8BD0`, `7D30` which the
+  frame code changes; the ISR can run in the middle of a frame (port: run it from the tick callback with the same data).
+* **Per segment** (`road_advance_segment`): road edges of the current segment and 4 ahead, height, autopilot.
+* **Once per drive screen**: `road_load_graphics`, `road_race_init` (initial frame without waiting for a flip first).
+* **New game / load**: `track_build_all` / `track_build_course` (random, uses the shared `rnd` generator: the town and
+  scenery layout depends on the generator state at that moment).
+
+-----------------------------------------------------------------------------------------------
+
+## 8. Open questions
+
+1. **Palette.** The road/shape colour indices only make sense with a non-default palette (palms are colour 13 =
+   light magenta with trunks 14 = yellow, grass/ground colour 9 = light blue, asphalt 1 = blue in the default EGA
+   palette). FORMATS.md says there is no palette code; either `tools/srlib.py`'s plane order/palette assumption is
+   off or the palette is set somewhere outside the code searched so far. Check against a screenshot of the original
+   before choosing colours in `platform/ega`.
+2. **Uninitialised locals (original bugs).** (a) `road_draw_band_front` compares the remaining line count with the
+   never-written local `[bp-0x22]` to draw an extra colour-2 line on the town shoulders for rows < 6; (b) `quad_fill`
+   mode 3 (right-hand town walls whose near edge is taller — the normal case for right walls!) accumulates into the
+   never-initialised `[bp-0x12]`; (c) `road_draw_band_mirror` uses `w>>1` when `C&8` is clear (harmless). The stack
+   slots hold whatever an earlier call at the same depth left. Recommendation: (a) treat as never equal (no extra
+   line); (b) initialise the accumulator with `x1 << 4` (the evident intent), then compare with the original in DOSBox:
+   if the right-hand walls look wrong in the original, emulate the stack slot instead.
+3. **Town heading nudges** (`213d`): once the car has passed within 6 segments of `R[44]` (bit 0, the right location
+   sign) `DS:7D3C` is decreased by 3 **every town frame** until `L[seg+7]&1` latches the opposite +3 (cancelling it).
+   Starting at location 1 (segment 10) this gives a constant heading drift between segments 38 and 101. Is this
+   really how cruising behaves (road "pulling" the car), or is `7D3C` reset elsewhere (`0000:d992`/`da25`)? The
+   latches are only cleared by `2114`.
+4. `opponent_draw` with sprite index −1 would use `DS:8ACA`/`8ACC` as a picture pointer; impossible as long as it is
+   only called for rows 0…14 / mirror rows 1…7 (`d < 0x78`). If the visibility test fails after a clip switch the
+   clip rectangle is **not** restored (mirror clip can stay active for the rest of the front rows when the
+   hysteresis gives a mirror sprite for a front row). Keep as is.
+5. The rear sprite `DS:8ACE[2]` and the police `#242` are loaded as temporary (mode 2) pictures; `0f38:a0b8(1)`
+   after the police shrink may release the heap region they live in while `8ACE[2]` is still used by `opponent_draw`.
+   Needs the heap-mark semantics from the platform spec (`0f38:a054/a09e/a0b8`).
+6. At the end of the mirror, a 32×(h−6) block of the mirror (from x 248, y 22 of the back page) is copied to page 0
+   (A000) at (8,3). Where is it shown? (Dashboard/split-screen area; video/race spec.)
+7. `DS:7EC0` (0 = finish at 0x17B, 1 = at 0x3FB) is set in `0000:9d6d` from `DS:4976`; which race type is which
+   (drag vs. road race / pink slips) belongs to the race spec. Also `DS:8ACC` semantics.
+8. The mirror reads flags at `seg-8…seg-2` and geometry at `seg-7…seg`; at the town start (segment 10) the mirror
+   reads segments ≥ 2 only, but `road_state_init` never places the car below 10, so negative indices are not reached
+   in normal play (keep the flat memory layout anyway).
+9. The PIT rate during driving (engine sound may reprogram it): if the tick rate differs from 72.8 Hz while driving,
+   the 9-tick frame lock changes accordingly — confirm in the sound/platform spec.
+
+**Answers from race.md (added when merging):** (1) the race code *does* program EGA attribute
+registers: `0000:67cf` sets regs 6/7 to the player's paint pair and `0000:8d9c` regs 0Ch/03h to the
+opponent's (police: pair 5) from `DS:50C2` — check whether other palette registers are set elsewhere
+before deciding on (1). (6) The mirror copy goes to the dashboard page, which the VGA split shows below
+scan line 99 (race.md §4.2). (7) `DS:7EC0` = 0 drag race, 1 road race; `DS:8ACC` is the CPU speed class,
+not an opponent level (race.md §7; the port should use a value ≥ 4). (9) The PIT stays at 72.8 Hz
+while driving (divisor 0x4000 set once by `0000:1111`; the sound code only writes channel 2).

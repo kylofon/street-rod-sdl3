@@ -6,6 +6,9 @@
 
 #include "host.h"
 #include "platform/platform.h"
+#include "game/flow.h"
+#include "game/garage.h"
+#include "game/race.h"
 
 Modules modules;
 
@@ -32,4 +35,9 @@ void modules_init(void)
     modules.timer_callback = nop_s16;
     modules.hotspot_at = no_hotspot;
     modules.fatal_message = fatal_message_stub;
+
+    /* Each game subsystem replaces the stand-ins it owns (game/hooks_*.c). */
+    flow_register_hooks();
+    garage_register_hooks();
+    race_register_hooks();
 }

@@ -38,7 +38,7 @@ Sound (to confirm): PC speaker, probably Tandy / AdLib â€” see the sound spec.
 - Tools carried over from TD3: `unexepack.py`, `x86dis.py`, `srindex.py` (was `td3index.py`),
   `tdmatch.py` (generalised `td2match.py`), `merge_symbols.py`, `gen_symbols.py`, Ghidra scripts.
 
-### 1. Executable map — in progress
+### 1. Executable map — done (2026-09-24, see `port/RE_GUIDE.md`)
 - Unpack, index (`tools/srindex.py`), match against TD1/TD2/TD3 (runtime only).
 - Ghidra project in `_ghidra/`, `SetDS` + `DecompileAll` â†’ `port/decomp/` (ignored).
 - Segment map, main state machine, graphics library dispatch, interrupt handlers.
@@ -63,7 +63,8 @@ Split by call tree once the map is known; expected:
   renderer, cockpit/dashboard, car physics, gear box, damage, police, opponent AI
 - `sound` â€” the sound driver(s) and music data
 
-### 4. `srport/` skeleton
+### 4. `srport/` skeleton — done (2026-09-24)
+A placeholder `game_main` shows LIB1 #0 (the title) through the C unpacker and the planar model.
 CMake + SDL3, adapted from `td3port`: EXE loader (EXEPACK in C), `mem.h` memory model, host
 (timer, retrace, XT scancodes, mouse, gamepad, audio), video model for the chosen mode, code
 pointers, generated `symbols.h`, `PORTING.md`. Headless test path (`SDL_VIDEO_DRIVER=dummy`,

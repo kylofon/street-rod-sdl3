@@ -94,6 +94,14 @@ for p in relocs:
 PTR_TABLES = [
     # filled in during the specs
 ]
+# Interrupt handlers installed with _dos_setvect / INT 21h AH=25h (found by hand, RE_GUIDE.md).
+HANDLERS = [
+    0x02c42,    # 0000:2c42 keyboard INT 9 (0000:2dc3)
+    0x01fe2,    # 0000:1fe2 timer INT 8, PIT divisor 4000h = 72.8 Hz (0000:1111)
+    0x0238c,    # 0000:238c timer INT 8 while a sound plays (0000:1aad / 0000:1b27)
+    0x0105b,    # 0000:105b critical error INT 24h (0000:1111)
+]
+seeds.update(HANDLERS)
 for sg, tbl, n, where in PTR_TABLES:
     base = DS_BASE if where == 'ds' else sg * 16
     for k in range(n):

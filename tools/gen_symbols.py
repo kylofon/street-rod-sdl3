@@ -1,4 +1,4 @@
-"""Generate td3port/src/symbols.h from port/symbols.csv (TDIII.EXE).
+"""Generate srport/src/symbols.h from port/symbols.csv (SR.EXE).
 
 DGROUP globals          #define DS_<name>  0xXXXX            (use with DSB/DSW/DSS/DSL from mem.h)
 code-segment globals    #define CS_<name>  0xXXXX            (offset in its segment, used as
@@ -55,6 +55,6 @@ for title, sel, prefix in (('DGROUP globals (offsets for DSB/DSW/DSS/DSL)', ds, 
             out.append('#define %-44s 0x%04X%04Xu  %s' % ('FN_' + n, k[1], k[2], comment(r)))
     out.append('')
 
-dst = os.path.join(ROOT, 'td3port', 'src', 'symbols.h')
+dst = os.path.join(ROOT, 'srport', 'src', 'symbols.h')
 open(dst, 'w', encoding='utf-8').write('\n'.join(out))
 print('wrote %s: %d DGROUP globals, %d code-segment globals, %d functions' % (dst, len(ds), len(cs), len(fn)))

@@ -48,7 +48,11 @@ dashboard, shops, newspaper, Bob's Drive-In, parts, people, map).
 
 ### Colours
 
-The 16-colour modes use BIOS mode 0Dh with the **default EGA palette**: there is no palette or DAC
-code in the program (no INT 10h/10xxh, no port 3C0h/3C8h). "VGA" in the mode menu differs from EGA
-only in the CRTC split screen used for the dashboard (`21a0:0014`, line compare with the VGA's
-doubled scan lines; `README.VGA`).
+The 16-colour modes use BIOS mode 0Dh with the EGA palette registers set by the game (`pal_set`
+0f38:1fa4, INT 10h AX=1002h through `int86x`, found by the game_flow spec): DS:0440 is the game
+palette (title, garage, most screens), DS:02D4 the credits, DS:0692 the protection screen; cars
+have their own palettes (garage spec). Register values 0..15 select the 16 IRGB colours (8..15 are
+written with bit 4 set, the 200-line colour set). There is no DAC programming. `tools/srlib.py`
+renders with DS:0440 by default (`--palette credits|ega` for the others). "VGA" in the mode menu
+differs from EGA in the CRTC split screen used for the dashboard (`21a0:0014`, line compare with
+the VGA's doubled scan lines; `README.VGA`).

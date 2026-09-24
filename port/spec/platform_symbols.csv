@@ -1,0 +1,260 @@
+kind,address,name,type,notes
+func,0000:0000,dos_print_line,near void (char *s),INT 21h AH=09h via int86 with \n\r$ appended
+func,0000:0082,video_menu,near int (int recommended),text-mode Video Options menu; returns 1-5 or 0; Esc exits
+func,0000:018b,vga_detect,near int (void),INT 10h AX=1A00h: BL=8 analog colour
+func,0000:01d1,bios_set_mode,far void (int mode),INT 10h AH=0
+func,0000:01f2,cga_set_palette,far void (int pal),INT 10h AH=0Bh BH=1; not on Hercules
+func,0000:0226,video_detect_menu,near int (void),detection + recommendation + menu; returns 1-6; VGA sets DS:0254=1 and returns 2
+func,0000:0316,driver_select,near void (int mode),fills driver vector table DS:78A2 (EGA: 21a0:1128 copies DS:5BD0)
+func,0000:04f4,video_mode_set,near void (int mode),BIOS mode 0Dh for EGA/VGA; DS:0048=1
+func,0000:05c6,cpu_speed_calibrate,near int (void),polls 0040:006C during one BIOS tick; /95/10; min 1 -> DS:8ACC
+func,0000:0659,slow_flag_set,near void (void),DS:82C6 = DS:8ACC < 4
+func,0000:066f,main,far void (int argc; char **argv),switches 1/nomouse/demo/auto/nouemem; init; game loop 0000:503f
+func,0000:0d58,hotspots_reset,far void (void),0f38:a054 + clears DS:051A-051E + 0f38:4ba1(1)
+func,0000:0d78,click_clear,far void (void),clears click events and discards the key slot
+func,0000:0d99,music_stop,far void (void),see sound
+func,0000:0dd8,music_resume,far void (void),see sound
+func,0000:0e24,input_reset,far void (void),timer queue reset; waits 10 key-free ticks; mouse and click state cleared
+func,0000:0f0b,tq_remove,far void (int e),tick-timer queue unlink (DS:0572 entries of 18 bytes)
+func,0000:0fb7,timer_restore,far void (void),PIT ch0 divisor 0; old INT 8; old INT 9
+func,0000:0fea,platform_exit,far noreturn (void),demo Quit box; restore timer/video/palette; speaker off; exit(5)
+func,0000:105b,crit_err_handler,far void (u16 deverror; u16 errcode; void far *devhdr),INT 24h via _harderr; _hardresume(1 retry / 2 abort)
+func,0000:1111,platform_install,far void (void),joystick detect+calibrate; mouse reset; _harderr; PIT 4000h; INT 8 1fe2; INT 9 2c42; ch2 mode; input_reset
+func,0000:12de,kbd_remap_screen,far void (int screen),per-screen hot keys from DS:579F[screen] + DS:579C (M -> A6h)
+func,0000:1391,kbd_remap_restore,far int (int keep_low),undoes kbd_remap_screen; clears direction state
+func,0000:1417,ui_wait,far int (int ticks),UI event loop: keys/mouse/clicks/hotspot hover/tick timers; 0 on timeout
+func,0000:1843,tq_insert,far int (int delay; int prio),sorted insert into the tick-timer queue; -1 if full
+func,0000:198a,tq_schedule_call,far void (int arg; int delay),type-1 timer: calls 0f38:1e41(arg) when due
+func,0000:19bc,tq_cancel_call,far void (int arg),only visits the queue head (walks next = earlier)
+func,0000:1a05,tune_start,far void (int tune; int repeat),see sound
+func,0000:1a7c,tune_rewind,far void (void),see sound; no callers
+func,0000:1aad,race_isr_enter,far void (void),INT 8 -> 0000:238c; mouse y shift 6; engine speaker on
+func,0000:1b27,race_isr_leave,far void (void),INT 8 -> 0000:1fe2; speaker off; mouse shifts 1/1
+func,0000:1b91,sign,far int (int v),-1/0/1
+func,0000:1bae,demo_step,far void (void),called from timer_isr in demo mode; see game_flow
+func,0000:1fe2,timer_isr,interrupt,INT 8 at 72.8 Hz: ticks; BIOS every 4th; demo; music; key/joystick cursor 1 px per tick
+func,0000:2374,race_ctrl_reset,far void (void),clears DS:05D6/78E2/78E4/78F4/78F6; DS:799E=DS:79A0; see race
+func,0000:238c,race_isr,interrupt,INT 8 while driving: ticks; BIOS every 4th; engine sound; control step every 12th tick (6.07 Hz); see race/sound
+func,0000:2b9a,bios_mode_a_set,far void (u8 equip; u8 mode),no callers
+func,0000:2bad,bios_mode_b_set,far void (u8 equip; u8 mode),no callers
+func,0000:2bc0,bios_mode_a_apply,far void (void),equipment bits + INT 10h AH=0; no callers
+func,0000:2be2,bios_mode_b_apply,far void (void),equipment bits + INT 10h AH=0; no callers
+func,0000:2c04,kbd_text_mode_on,far void (int keep_space),Backspace/comma/period (and Space=20h) become keys
+func,0000:2c2b,kbd_text_mode_off,far void (void),Space back to click 1Fh
+func,0000:2c42,kbd_isr,interrupt,INT 9: table DS:4766; key slot DS:47D0; directions DS:472E/472F; clicks DS:4736
+func,0000:2db6,key_read,far int (void),read-and-clear DS:47D0 with interrupts off
+func,0000:2dc3,kbd_install,far void (void),INT 9 -> 0000:2c42 (old vector in DS:47D4/47D6)
+func,0000:2de2,kbd_restore,far void (void),restores INT 9
+func,0000:2df4,joy_read,far void (void),port 201h: DS:4718/471A relative to centre; buttons DS:471C; click
+func,0000:3614,pools_reset,near void (int full),free lists at DS:83B0 (16 x 28h) and DS:866A (8Ch x 8); see game_flow
+func,0000:36a8,get_ds,far u16 (void),segread -> DS
+func,0000:36be,mem_pools_init,near void (void),DS:64A6=800h; DS:6C60=DS; pools_reset(1)
+func,0000:36d6,far_free,far void (void far *p),_ffree
+func,0000:36e9,out_of_memory,far noreturn (void),message box Not enough memory to run Street Rod ! then platform_exit
+func,0000:3709,far_alloc,far void far *(u16 size; int fatal),_fmalloc; rejects DGROUP blocks (and seg >= 8000h on Tandy)
+func,0000:376b,bitmap_alloc,far Bitmap far *(int w; int h; int flags; int drv; Bitmap far *d),48-byte descriptor + planes + optional mask
+func,0000:3880,bitmap_make,far Bitmap far *(void far *data; void far *mask; int w; int h; int drv),no callers
+func,0000:3904,bitmap_init,far void (Bitmap far *d; void far *data; void far *mask; int w; int h; int drv),fills a descriptor
+func,0000:3967,vram_pool_alloc,far void far *(u16 size; u8 *plane),4 off-screen EGA pools (one per plane) from A000:7D00
+func,0000:39c0,lib_phase2,near int (void),after the title: LIB2 dir; HOT_DATA; resident pictures; demo flag; copy protection call patched out at 0000:3a1a
+func,0000:3a83,wait_ticks_or_input,far void (int ticks),ui_wait with DS:05CC deadline and DS:05D0=1
+func,0000:e56a,herc_mem_alias,far bool (void),B000:3FFF vs 7FFF alias test
+func,0000:e584,herc_detect,far bool (void),3BAh bit 7 toggling + 64K test
+func,0000:e5c3,equip_is_mono,far int (void),INT 11h bits 4-5 == 30h
+func,0000:e5d2,herc_graphics_on,near void (void),Hercules CRTC setup
+func,0000:e610,video_restore,far void (void),restores equipment byte and start-up BIOS mode
+func,0000:e62f,ega_vga_detect,near void (void),INT 10h AH=0Fh/12h; CRTC 3D4h probe; DS:0250/0252/5AF1
+func,2460:0002,far_memmem,far int (char *pat; void far *buf; int len),finds the Tandy signature in the BIOS ROM
+func,0f38:0b2d,pal_black,far void (void),driver vector 7: ega_set_palette(DS:0452); DS:8249=0; not indexed by srindex
+func,0f38:0b3f,pal_normal,far void (void),driver vector 8: ega_set_palette(DS:0440); DS:8249=1; not indexed by srindex
+func,0f38:0b51,wait_click_or_key,far void (int ticks),waits for ticks/click/button/Enter/Esc; M toggles music
+func,0f38:1f4b,ega_set_palreg,far void (int reg; int colour),waits for vretrace; INT 10h AX=1000h; see video
+func,0f38:1fa4,ega_set_palette,far void (u8 *pal16),INT 10h AX=1002h via int86x; values >= 8 get |10h; see video
+func,0f38:2d7e,cursor_ctl,far void (int op),op >= 0 shape; -1/-2 show; -3/-4 hide (DS:4733); see video
+func,0f38:5eb6,rnd,far int (int n),Wichmann-Hill; n <= 0 seeds from time() and returns -1
+func,0f38:6016,lib_seek,far int (int handle; long pos),intdos AX=4200h
+func,0f38:6057,pic_index,near int (int id),id >= 1000 -> id-991 else id-1; CGA remap DS:07C6
+func,0f38:6089,lib_select,near void (int id),one library open at a time; disk prompt; count check 115h
+func,0f38:61ab,lib_read_dir,far int (int lib),30-byte records -> 48-byte entries in segment 389b; returns max packed size
+func,0f38:62ba,pic_load,near int (int id; int to_vram; void far *dst),0 no memory / 1 already loaded / 2 RAM / 3 parked in an EGA plane
+func,0f38:655e,pic_free,far void (int id),_ffree of the packed copy
+func,0f38:65ae,pic_decode,far Bitmap far *(int id; Bitmap far *dst),load into DS:7564 and unpack (0e92:0006)
+func,0f38:67ff,pic_info,far void (int id; int *w; int *h; int *masked),directory lookup
+func,0f38:683e,pic_get,far Bitmap far *(int id; int mode),arena bitmap + pic_decode
+func,0f38:6887,pic_park_list,far int (int *ids),parks packed pictures in EGA memory unless nouemem
+func,0f38:68ca,pic_load_list,far int (int *ids; int keep_going),loads packed pictures into RAM; returns the count
+func,0f38:6915,pic_free_list,far void (int *ids),pic_free for each
+func,0f38:6943,lib_open_all,far void (int disks; int mode),opens ?:lib1(c) and ?:lib2(c); floppy handling
+func,0f38:6b79,hot_data_load,far void (void),13 blocks of ?:hot_data into DGROUP; then hall_load
+func,0f38:6c3d,data_disk_check,far int (void),floppy: prompts until hot_data opens; returns the drive letter
+func,0f38:6ccf,hall_scramble,near void (void),sets bit 7 of DS:82CA[230]
+func,0f38:6cec,hall_unscramble,near void (void),clears bit 7 of DS:82CA[230]
+func,0f38:6d09,hall_load,far void (void),?:hall_dat -> DS:7646 + DS:82CA
+func,0f38:6dd2,hall_save,far void (void),writes ?:hall_dat scrambled
+func,0f38:799a,mouse_reset,far int (void),INT 33h AX=0 via int86 if vector 0000:00CC is set
+func,0f38:79d7,mouse_buttons,far void (void),INT 33h AX=3 -> DS:05EE/05F0
+func,0f38:7a14,mouse_motion,far void (int *dx; int *dy),INT 33h AX=0Bh mickeys
+func,0f38:7a47,mouse_poll,far void (void),mickey accumulators >> shift -> DS:05E2/05E4; left button click
+func,0f38:9ee9,arena_init,far void (void),DS:6CD0 = far_alloc(65000)
+func,0f38:9f2c,arena_alloc,far void far *(int n; int mode),4 stack-style modes over DS:8B02[]
+func,0f38:a0b8,arena_pop,far void (int k),releases top allocations
+func,1e16:1b9a,int86,,MSC runtime
+func,1e16:1ce8,int86x,,MSC runtime
+func,1e16:1d7e,intdos,,MSC runtime
+func,1e16:1b6e,kbhit,,MSC runtime
+func,1e16:1b82,getch,,MSC runtime
+func,1e16:1dc8,movedata,,MSC runtime (rep movsb)
+func,1e16:1de6,segread,,MSC runtime
+func,1e16:1dfc,time,,MSC runtime
+func,1e16:157e,_ffree,,MSC runtime
+func,1e16:1593,_fmalloc,,MSC runtime
+func,1e16:22de,remove,,MSC runtime (INT 21h AH=41h)
+func,1e16:22ec,_bios_equiplist,,MSC runtime (INT 11h)
+func,1e16:22f0,_dos_close,,MSC runtime
+func,1e16:2305,_dos_creat,,MSC runtime
+func,1e16:231e,_dos_getvect,,MSC runtime
+func,1e16:2330,_dos_open,,MSC runtime
+func,1e16:2348,_dos_read,,MSC runtime
+func,1e16:234f,_dos_write,,MSC runtime
+func,1e16:236c,_dos_setvect,,MSC runtime
+func,1e16:2396,_harderr,,MSC runtime
+func,1e16:23e3,_hardresume,,MSC runtime
+func,1e16:23ec,_aFldiv,,MSC runtime long divide
+func,1e16:255e,_aFlshr,,MSC runtime long shift right
+func,1e16:256a,_aFaldiv,,MSC runtime long divide-assign
+global,DS:0042,herc_graphics,u16,Hercules graphics active
+global,DS:0044,timer_installed,u16,platform_exit restores the timer
+global,DS:0046,herc_mode,u16,
+global,DS:0048,gfx_mode_set,u16,BIOS graphics mode set; exit restores palette and mode
+global,DS:0242,menu_lines,u16[7],video menu line pointers
+global,DS:0250,ega_present,u16,0 none / 1 EGA-VGA / 2 no colour CRTC
+global,DS:0252,ega_lowres_sw,u16,
+global,DS:0254,vga_split,u16,1 = VGA (split screen with doubled scan lines)
+global,DS:0262,mouse_allowed,u16,0 with nomouse
+global,DS:0280,no_ega_park,u16,nouemem switch
+global,DS:0440,ega_palette,u8[16],00 00 08 07 0F 07 09 0B 03 02 04 0C 05 0A 06 0E (values >= 8 get |10h)
+global,DS:0452,black_palette,u8[16],all zero
+global,DS:0566,tq_head,i16,earliest timer entry
+global,DS:0568,tq_tail,i16,latest timer entry
+global,DS:056A,tq_free,i16,free list
+global,DS:056C,tq_next_due,u32,deadline of the head (7FFFFFFFh = none)
+global,DS:0572,tq_entries,5 x 18 bytes,{next; prev; u32 deadline; prio; type; arg; pad}
+global,DS:05CC,wait_deadline,u32,ui_wait returns 1000 after it
+global,DS:05D0,wait_any_key,u16,ui_wait returns 3EBh on key or click
+global,DS:05D2,wait_key,u16,key that ended the wait (0 = click)
+global,DS:05DE,click_returns,u16,ui_wait returns 3EBh on a click
+global,DS:05E0,timer_on,u16,
+global,DS:05E2,mouse_dx,i16,
+global,DS:05E4,mouse_dy,i16,
+global,DS:05E6,mouse_acc_x,i16,
+global,DS:05E8,mouse_acc_y,i16,
+global,DS:05EA,mouse_shift_x,u16,1
+global,DS:05EC,mouse_shift_y,u16,1 (6 while driving)
+global,DS:05EE,mouse_left,u16,
+global,DS:05F0,mouse_right,u16,
+global,DS:05F2,mouse_present,u8,
+global,DS:05F8,ticks,u32,72.8 Hz tick counter
+global,DS:0600,bios_ticks,u32,18.2 Hz counter
+global,DS:0608,chain_count,u8,BIOS chain countdown
+global,DS:0609,race_step_count,u8,race step countdown (every 3rd chain tick)
+global,DS:0610,demo_active,u16,63h = Esc pressed in the demo
+global,DS:0612,auto_drive,u16,auto switch
+global,DS:0698,pal_cycle,u8[3],colours rotated through palette registers 6-8
+global,DS:06A4,demo_quit_done,u16,
+global,DS:06A6,demo_fast,u8,
+global,DS:06AE,demo_cursor_x,i16,
+global,DS:06B0,demo_cursor_y,i16,
+global,DS:06E0,isr_cursor_busy,u8,
+global,DS:06E8,isr_race_busy,u8,
+global,DS:4718,joy_x,i16,count minus centre
+global,DS:471A,joy_y,i16,count minus centre
+global,DS:471C,joy_buttons,u8,
+global,DS:471D,joy_present,u8,
+global,DS:471E,joy_centre_x,i16,
+global,DS:4720,joy_centre_y,i16,
+global,DS:4722,joy_thr_x_lo,i16,
+global,DS:4724,joy_thr_x_hi,i16,
+global,DS:4726,joy_thr_y_lo,i16,
+global,DS:4728,joy_thr_y_hi,i16,
+global,DS:472A,cursor_x,i16,
+global,DS:472C,cursor_y,i16,
+global,DS:472E,kbd_dir_x,i8,
+global,DS:472F,kbd_dir_y,i8,
+global,DS:4730,kbd_last_dir,i8[2],
+global,DS:4732,click_held,u8,bit0 key; bit1 joystick; bit2 mouse
+global,DS:4733,cursor_shown,i8,show counter
+global,DS:4736,click_code,u8,1Fh key / 1-3 joystick / 1 mouse
+global,DS:4737,click2_code,u8,
+global,DS:4738,click_x,i16,
+global,DS:473A,click_y,i16,
+global,DS:473C,click2_x,i16,
+global,DS:473E,click2_y,i16,
+global,DS:4740,kbd_dir_lock,i16,
+global,DS:4742,cursor_hot_x,i16,
+global,DS:4744,cursor_hot_y,i16,
+global,DS:474C,step_x,i16[3] indexed -1..1,
+global,DS:4752,step_y,i16[3] indexed -1..1,
+global,DS:4766,kbd_xlat,u8[57h],scan code -> key code; negative = direction
+global,DS:47CD,click_edge,u8,
+global,DS:47CE,sound_on,u8,Ctrl toggles
+global,DS:47CF,speaker_on,u8,
+global,DS:47D0,key,u8,single key slot
+global,DS:47D4,old_int9,far ptr,
+global,DS:47E8,joy_saved_sp,u16,
+global,DS:47EE,click_seen,u16,
+global,DS:4BC8,pal_cycle_on,u16,
+global,DS:4BEE,msg_no_memory,char[],
+global,DS:4C14,vram_pool_base,far ptr,A000:0000
+global,DS:4C18,vram_pool_used,u16[4],
+global,DS:4C20,big_pics,u16[4],{3; 1; 4; 0}
+global,DS:4C28,resident_pics,u16[],0-terminated LIB2 id list
+global,DS:4EA2,hot_data_name,char *,
+global,DS:4EA4,hot_block_dst,u16[13],
+global,DS:4EBE,hot_block_size,u16[13],
+global,DS:4ED8,lib_handle,u16[2],
+global,DS:4EDC,lib_names,char *[4],
+global,DS:4EE4,lib_msgs,char *[5],
+global,DS:4F0E,decode_alloc,u16,
+global,DS:4F3A,hall_name,char[],?:hall_dat
+global,DS:579F,kbd_remap_tables,u16[42],per-screen {scan; code} lists
+global,DS:5AEE,saved_bios_mode,u8,
+global,DS:5AF0,saved_equip,u8,
+global,DS:5AF1,ega_mem,u8,
+global,DS:5B04,drv_table_cgaherc,far ptr[15],
+global,DS:5B8A,drv_table_tandy,far ptr[15],
+global,DS:5BD0,drv_table_ega,far ptr[15],
+global,DS:68E2,pages_seg,u16,2e3e
+global,DS:691C,picdir_seg,u16,389b
+global,DS:6C46,cursor_drawn_x,i16,
+global,DS:6C48,cursor_drawn_y,i16,
+global,DS:6C4A,cursor_moved,u8,
+global,DS:6C4C,screen_id,u16,
+global,DS:6C4E,last_click_code,u8,
+global,DS:6C60,dgroup_seg,u16,
+global,DS:6C62,rnd_s1,i16,
+global,DS:6C64,rnd_s2,i16,
+global,DS:6C66,rnd_s3,i16,
+global,DS:6C68,cur_drive,u16,1 = A:
+global,DS:6C6A,cur_lib_count,u16 *,
+global,DS:6C6C,cur_lib_handle,u16 *,
+global,DS:6C6E,cur_lib_name,char *,
+global,DS:6C70,other_lib_handle,u16 *,
+global,DS:6C72,hot_data_path,char[],
+global,DS:6CD0,arena,far ptr,65000 bytes
+global,DS:70E2,libs_preloaded,u16,
+global,DS:7564,pack_buf,far ptr,18000 bytes
+global,DS:7646,hall_count,u16,
+global,DS:78A2,drv_vec,far ptr[15],driver vector table
+global,DS:7AAA,old_int8,far ptr,
+global,DS:82C6,slow_machine,u16,
+global,DS:82CA,hall_records,u8[230],10 x 23 bytes
+global,DS:8236,driver_id,i16,-2 EGA/VGA
+global,DS:8238,planes,u16,
+global,DS:823A,pixel_shift,u16,
+global,DS:8ACC,cpu_speed,u16,
+global,DS:8BC8,lib1_count,u16,
+global,DS:8BCE,demo_switch,u16,
+global,DS:8DD2,lib2_count,u16,
+global,DS:8DD4,lib1_name,char *,
+global,DS:8DD6,lib2_name,char *,
+global,DS:8EF6,tq_default_prio,u16,10

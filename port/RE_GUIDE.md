@@ -53,8 +53,8 @@ port skeleton (`../TestDrive3/td3port`), not for names.
 | `2645`, `2beb` | 32 K | graphics drivers for the other modes (CGA/Tandy) and the mode menu text; to confirm |
 
 `DS:8236` = active driver: `-2` EGA/VGA, `-3` CGA?, `-4` Hercules, `-6` Tandy. `DS:0254` = 1 on VGA
-(the split-screen code uses the doubled scan-line count). There is no palette code: the 16-colour
-modes use the default EGA palette.
+(the split-screen code uses the doubled scan-line count). The palette is set with INT 10h AX=1002h
+(`0f38:1fa4`, game palette DS:0440; FORMATS.md "Colours").
 
 Functions with no direct callers (68% code coverage) are mostly reached through the driver vector
 tables filled by `0000:0316` in the segment at `DS:68E2` (`es:[0x24]` …). Record new pointer

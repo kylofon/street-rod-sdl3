@@ -14,7 +14,11 @@ Packing (unpacker 0e92:0006, input = data[1:size]):
 16-colour pictures are planar: 4 planes one after the other (plane 0 = blue bit ... 3 = intensity),
 each height rows of width/8 bytes, MSB = leftmost pixel. CGA pictures: 2 bits per pixel, linear.
 
-usage: srlib.py Game/LIB2 work/lib2 [--palette ega|vga]   -> PNG per picture + contact sheet
+usage: srlib.py Game/LIB2 work/lib2 [--palette game|credits|ega]   -> PNG per picture + contact sheet
+  game (default): the EGA palette registers at DS:0440 of work/SR_unp.exe (title, garage ...),
+  credits: DS:02D4, ega: the BIOS default. Register values index the 16 IRGB colours (the game
+  sets them through INT 10h AX=1002h with bit 4 added for 8..15, i.e. the 200-line CGA colours).
+  Car pictures use per-car palettes (garage spec), so their colours may still be off.
 """
 import os, struct, sys, zlib
 
@@ -25,6 +29,13 @@ EGA16 = [(0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170), (170, 0, 0), (170, 
          (170, 170, 170), (85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255), (255, 85, 85),
          (255, 85, 255), (255, 255, 85), (255, 255, 255)]
 CGA4 = [(0, 0, 0), (85, 255, 255), (255, 85, 255), (255, 255, 255)]
+
+
+def game_palette(ds_off, exe='work/SR_unp.exe'):
+    d = open(exe, 'rb').read()
+    img = d[struct.unpack_from('<H', d, 8)[0] * 16:]
+    regs = img[0x3E960 + ds_off:0x3E960 + ds_off + 16]
+    return [EGA16[r & 15] for r in regs]
 
 
 def read_lib(path):
@@ -91,14 +102,13 @@ def png(path, w, h, rgb):
 
 def main():
     src, out = sys.argv[1], sys.argv[2]
-    pal_name = sys.argv[sys.argv.index('--palette') + 1] if '--palette' in sys.argv else 'ega'
+    pal_name = sys.argv[sys.argv.index('--palette') + 1] if '--palette' in sys.argv else 'game'
     os.makedirs(out, exist_ok=True)
     pics = read_lib(src)
     cga = src.upper().endswith('C')
     pal = CGA4 if cga else EGA16
-    if pal_name == 'vga' and not cga:
-        import srpal
-        pal = srpal.VGA
+    if pal_name in ('game', 'credits') and not cga:
+        pal = game_palette(0x0440 if pal_name == 'game' else 0x02D4)
     sheet = []
     for p in pics:
         pix = unpack(p['data'], p['tokens'], p['raw'])

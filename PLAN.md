@@ -18,15 +18,18 @@ port skeleton (loader, `mem.h`, host, code pointers), not for names.
 | `LIB1` | 76 662 | image library, 9 entries (full screens 320×200 and smaller), 4 bits per pixel, compressed |
 | `LIB2` | 338 997 | image library, 268 entries (cars, parts, people, dashboard …) |
 | `LIB1C`, `LIB2C` | 23 K / 334 K | the same libraries at 2 bits per pixel (CGA) |
-| `HOT_DATA` | 4 116 | fixed-size records: probably the clickable hot spots of the screens, or the opponents' cars |
-| `datadisk/` | | *Street Rod SE* (2014 fan edition): `SRSE.EXE` = SR.EXE with the protection check jumped over and CGA/Hercules disabled (41 bytes); its `LIB1`, `LIB2`, `HOT_DATA` carry 25 replacement cars |
+| `HOT_DATA` | 4 116 | 13 blocks: opponents (22 × 18 bytes, block 0) and more (game_flow spec); 52 trailing bytes never read |
+| `datadisk/` | | *Street Rod SE* (2014 fan edition): `SRSE.EXE` = SR.EXE with the protection routine returning 1 and CGA/Hercules disabled (41 bytes); its `LIB1`, `LIB2`, `HOT_DATA` carry 25 replacement cars. The shipped `SR.EXE` is itself cracked another way (the call at 0000:3a1a jumped over, the check at 314e NOPed) |
 
-Library directory (first pass): `u16 count`, then `count` × 30-byte records:
-`u16 width, u16 height, u16 raw_size (= w×h/2, /4 for CGA), u8 ?, u8 colour_map[16], u8 0,
-u32 offset, u16 packed_size`; the first record has no offset/size prefix (see `FORMATS.md` once decoded).
+Picture libraries: decoded, see `FORMATS.md` (`tools/srlib.py`). Data tables: `tools/srtables.py`.
 
 Video modes in the exe menu: CGA 4 colours, EGA 16, **VGA 320×200×16**, Hercules, Tandy 16.
-Sound (to confirm): PC speaker, probably Tandy / AdLib — see the sound spec.
+The VGA mode is BIOS mode 0Dh with the game's EGA palette registers (INT 10h AX=1002h, no DAC);
+it differs from EGA only in the dashboard split screen. Sound: **PC speaker only**: a tick-driven
+music sequencer, the engine note and bit-banged noise effects, no digitised sound
+(`port/spec/sound.md`). Timer 72.8 Hz; the race runs a car step in the timer ISR every 12th tick
+(6.07 Hz). Switches: `nomouse`, `demo` (self-playing attract mode), `auto` (races drive
+themselves), `nouemem` (no picture parking in video memory).
 
 ## Phases
 
@@ -38,13 +41,13 @@ Sound (to confirm): PC speaker, probably Tandy / AdLib — see the sound spec.
 - Tools carried over from TD3: `unexepack.py`, `x86dis.py`, `srindex.py` (was `td3index.py`),
   `tdmatch.py` (generalised `td2match.py`), `merge_symbols.py`, `gen_symbols.py`, Ghidra scripts.
 
-### 1. Executable map � done (2026-09-24, see `port/RE_GUIDE.md`)
+### 1. Executable map — done (2026-09-24, see `port/RE_GUIDE.md`)
 - Unpack, index (`tools/srindex.py`), match against TD1/TD2/TD3 (runtime only).
 - Ghidra project in `_ghidra/`, `SetDS` + `DecompileAll` → `port/decomp/` (ignored).
 - Segment map, main state machine, graphics library dispatch, interrupt handlers.
 - Output: `port/RE_GUIDE.md`, `port/symbols.csv`.
 
-### 2. File formats � started (LIB1/LIB2 decoded, `FORMATS.md`)
+### 2. File formats — started (LIB1/LIB2 decoded, `FORMATS.md`)
 Each format gets a decoder that dumps to `work/` plus an image / contact sheet:
 1. `LIB1` / `LIB2` directory and decompressor → every picture as PNG (EGA/VGA 16-colour set first).
 2. Palettes / colour maps (the 16-byte map per picture; VGA DAC values in the exe).
@@ -63,7 +66,7 @@ Split by call tree once the map is known; expected:
   renderer, cockpit/dashboard, car physics, gear box, damage, police, opponent AI
 - `sound` — the sound driver(s) and music data
 
-### 4. `srport/` skeleton � done (2026-09-24)
+### 4. `srport/` skeleton — done (2026-09-24)
 A placeholder `game_main` shows LIB1 #0 (the title) through the C unpacker and the planar model.
 CMake + SDL3, adapted from `td3port`: EXE loader (EXEPACK in C), `mem.h` memory model, host
 (timer, retrace, XT scancodes, mouse, gamepad, audio), video model for the chosen mode, code

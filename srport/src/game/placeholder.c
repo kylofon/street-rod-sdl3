@@ -50,6 +50,10 @@ static void show_lib_picture(const char *lib, int index)
 int game_main(void)
 {
     host_set_kbd_handler(on_key);
+    for (int i = 0; i < 16; i++) {                  /* game palette DS:0440, as pal_set 0f38:1fa4 */
+        u8 v = mem[lin(DGROUP, (u16)(0x0440 + i))];
+        ega_set_palette_reg(i, v >= 8 ? (u8)(v | 0x10) : v);
+    }
     show_lib_picture("LIB1", 0);
     while (!quit) host_pump();
     return 0;

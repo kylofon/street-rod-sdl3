@@ -1,0 +1,146 @@
+kind,address,name,type,notes
+func,0000:3614,pools_init,void(int reset_owner),"16 car records DS:83B0, 140 part nodes DS:866A; reset_owner clears owner lists, money, DS:7EAE=10 (game_flow range)"
+func,0000:3b0c,garage_full_check,int(void),"cars_used>=16 -> msg 0xE27, parts_used>=0x83 -> msg 0xE3F; returns 1 if full"
+func,0000:3b33,newspaper_front,int(void),"LIB2 #21 + headline DS:4F4E[random] + date; ui_run(7): 1 Used Cars, 2 Auto Parts, 4 garage"
+func,0000:3c1b,part_alloc,PART*(void),"pop DS:7EBA, parts_used++"
+func,0000:3c3e,part_free,void(PART*),"push DS:7EBA, type=-1, parts_used--"
+func,0000:3c5a,part_value,far int(PART*),"100 for a V-6 engine (category 0 grade 0) else part->value"
+func,0000:3c8d,sell_spare_parts,void(void),"Sell parts: engine/trans a+trunc((v-a)*k*0.9) with a=trunc(v*k*0.9), k=cond/100; carb/manifold v*(70..89)/100; tyres 0; round down to $5"
+func,0000:3fb1,car_alloc,CAR*(void),"pop DS:7EB4, cars_used++"
+func,0000:3fd4,car_release,void(CAR*),"push DS:7EB4, model=-1, cars_used--"
+func,0000:3ff0,spare_add,"void(int type, int value)","new part node on the spare list DS:7EB8"
+func,0000:4036,car_new,"CAR*(int model, int value, CAR *reuse)","stock car from MODELS[model].spec, all bolts tight, gas 40, random colour/ignition; new car -> cur_car or other_cars"
+func,0000:4386,part_release,"int(PART*, int keep)","returns value; keep -> spare list else free"
+func,0000:43bf,car_free,"int(CAR*, int keep)","release parts (tyres always freed) and the car; returns max(0, body value)"
+func,0000:442b,classifieds,void(int section),"Used Cars / Auto Parts ads (section 1 / 2), See it, buy"
+func,0000:4940,how_about,int(uint *offer),"round down to a multiple of 5 (min 5), 'How about $%d ?' screen 0xD, -20 = OK"
+func,0000:49a2,car_flags,far uint(CAR*),"4 roof chopped, 2 rear bumper stripped, 1 front bumper stripped, 8 engine grade 2"
+func,0000:49ed,your_cars,int(void),"Your cars: Switch it (returns 3) / Sell it with haggling (base 75..94%, counters 85..89% / 91..95% of base, accept ask <= offer/0.9)"
+func,0000:4fca,sfx_play_wait,far void(int n),"start effect n and wait until it ends (sound)"
+func,0000:4ffa,message_at,"far void(int id, int x, int y)","message box at a position (race results)"
+func,0000:542e,opponent_init,"far void(int i, int *pool)","opponent i (DS:7FF8+18*i): random model from pool, colour, flags, sticker"
+func,0000:5584,opponents_init,void(void),"pools by class <3 / 3-5 / >=6, 7 opponents each; demo: opponent 0 = The Geek, model 24"
+func,0000:56a9,new_game,void(void),"pools_init(1), money 750 (demo 10000), opponents, clock 0, race wins 0 (game_flow range)"
+func,0000:570c,new_game_prompt,int(void),"driver licence (LIB2 #16) name entry DS:7E9A then new_game (game_flow)"
+func,0000:6476,day_index,far int(void),"(game_clock + tick_clock - clock_origin) / 0x1998, max 0x5B"
+func,0000:64a3,clock_hm,"far void(int *h, int *m)","hour/minute of the 12-hour day (0x222 per hour)"
+func,0000:6529,summer_over_check,far void(void),"day_index > 0x5A -> DS:0282 |= 1"
+func,0000:653c,month_of_day,"int(int day, int *dom)","0 June (16..30), 1 July, 2 August, 3 September (1..15)"
+func,0000:65af,calendar_show,far void(int quick),"calendar LIB2 #219/#221 + day marker #220"
+func,0000:6750,date_print,far void(int y),"'%s %d, 1963' on the newspaper"
+func,0000:67cf,set_paint_palette,far void(int colour),"EGA palette registers 6/7 = DS:50C2[colour]; shadow DS:0446/0447"
+func,0000:6827,hotspot_find,far int(int code),"garage screen record 0x74..0x85 with this code"
+func,0000:6882,garage_hotspots_register,void(void),"0f38:4265(0x74,0x12,0x12)"
+func,0000:68b3,garage_hotspots_nocar,void(void),"disable the car hot spots (codes DS:508A) with type 0xE"
+func,0000:68e8,garage_hotspots_car,"void(int model, int x, int y)","place the 5 car hot spots from DS:70E4 (HOT_DATA block 4)"
+func,0000:6aa6,garage_name_clear,far void(void),"strcpy(DS:29FF, DS:5094)"
+func,0000:6ad8,broke_check,int(void),"no car, no other car, no spares, money < 400"
+func,0000:6b06,garage_screen,int(int mode),"garage (LIB2 #32): 0 keep, 1 redraw, 2 after a trip, 3 after Switch it; warnings; ui_run(10)"
+func,0000:6f6b,paint_job,void(void),"6 colours, $20, 4 h, removes the sticker; EGA/VGA/Tandy only"
+func,0000:711a,customize,void(int what),"4 roof $70 (0x2220), 2 rear bumper / 1 front bumper $15 (0x888); toggles car flags 0x2000/0x4000/0x8000"
+func,0000:7367,stickers,void(void),"sticker 1..8 (codes -0x1F..-0x26) into car+0x24 bits 8-12, $5"
+func,0000:76a7,spares_collect,"void(int cat, PART **nodes, char *wear, int n0)","spare parts of one category into DS:49E0"
+func,0000:7741,part_install,"void(PART *p, PART **slot)","old part to spares, p into slot, cur_car value adjusted"
+func,0000:7789,part_uninstall,void(PART **slot),"slot part to spares, cur_car value adjusted"
+func,0000:77b7,spare_unlink,PART*(PART *p),"remove from the spare list"
+func,0000:7800,change_tires,void(void),"swap tyres with a spare set, tire_change_anim, 2 h"
+func,0000:78f1,car_info_list,"void(int *xoff, char *wear)","Car info rows"
+func,0000:79eb,car_info,far void(void),"Car parts list + gas + top speed (screen 0x26)"
+func,0000:7aa4,change_transmission,void(void),"transmission screen: 2 bolts (car+0x14/15), fit / remove"
+func,0000:7ee6,car_runnable,"far int(CAR*, int full)","engine stack present and tight, engine connected; full: also trans, tyres, trans bolts"
+func,0000:7fb1,ignition_tune,void(CAR*),"timing light: car+0x20 in -8..4, speaker divisor 0x7530+|ign|*0x400"
+func,0000:81ab,engine_bay,void(CAR*),"Pop the hood: bolts 1-9, connector 13, fit engine/manifold/carbs, Tune; view only for other cars"
+func,0000:b8a1,gas_station,far void(void),"gas station (race range): 3-gallon units at $1, doubled after waiting (full service)"
+func,0000:b717,gas_leave,void(int *st),"fines, gas clamped to 170, drive off (race range)"
+func,0000:e218,top_speed,int(int model),"mph from body mods, class, carb x manifold, engine, trans, ignition, engine wear, automatic x0.8; max 130 (race range)"
+func,0f38:4f4f,list_box,"far int(int scr, int sel, int *xoff, int *list, char *wear, char **extra)","save background, list_box_run, restore; 0x3EA if the list is empty"
+func,0f38:4fc1,wear_text,char*(int pct),"'(`new`)' or '(NN% worn)' built in DS:07AA"
+func,0f38:500e,list_box_run,far int(...),"scrolling list: row click selects (DS:8BA0), -7..-10 scroll, -6 edit, other negative codes return"
+func,0f38:590b,list_selected,far int(void),"returns DS:8BA0"
+func,0f38:5da7,edit_number,"far int(uint *v, char *buf)","numeric edit field through 0f38:5910; *v = atoi(buf)"
+func,0f38:8e48,car_draw,"far void(int mode, int model, int flags, int sticker, int driver, int y, int smoke, int *tyre_pics)","2 leave gas station, 3 parked, 4 drive in, 6 drive out, 7 See it, 8 after customising"
+func,0f38:8866,car_compose,far void(...),"base picture + roof/scoop/bumper overlays (DS:8DF0) + sticker + driver + wheels"
+func,0f38:be93,tire_change_anim,"far void(int *old_pics, int *new_pics)","tyre swap animation"
+func,0f38:3074,trans_bolt_draw,"void(int tight, int bolt)",(prov.) transmission screen
+func,0f38:31a5,trans_bolt_remove_anim,void(int bolt),(prov.)
+func,0f38:32ce,trans_slide_anim,"void(int pic, int reject)",(prov.)
+func,0f38:3404,trans_remove_anim,"void(int pic, int mode)",(prov.)
+func,0f38:345b,trans_screen_draw,"void(int pic, char *bolts, ...)",(prov.)
+func,0f38:3697,bay_bolt_draw,void(int pic),(prov.) engine bay
+func,0f38:37fc,bay_bolt_remove_anim,void(void),(prov.)
+func,0f38:3a58,bay_part_in_anim,"void(int pic, int reject)",(prov.)
+func,0f38:3c19,bay_part_out_anim,"void(int pic, int mode)",(prov.)
+func,0f38:3d1c,bay_connector_draw,void(void),(prov.) uses DS:82AC
+func,0f38:3e35,bay_draw_car,void(CAR*),(prov.)
+func,0f38:3f2d,bay_draw_parts,"void(int *tbl, int *bolts, int own)",(prov.)
+func,0f38:40ca,bay_draw_bolts,"void(int *tbl, int *bolts)",(prov.)
+global,DS:7EAA,money,i32,"bankroll in $ (with DS:7EAC)"
+global,DS:7EAE,unk_7eae,i16,"=10 at a new game, no reader found"
+global,DS:7EB0,cur_car,CAR*,"car in the garage"
+global,DS:7EB2,other_cars,CAR*,"other owned cars, link +0x26"
+global,DS:7EB4,car_free_list,CAR*,
+global,DS:7EB6,cars_used,i16,"limit 16"
+global,DS:7EB8,spares,PART*,"spare parts, link +6"
+global,DS:7EBA,part_free_list,PART*,
+global,DS:7EBC,parts_used,i16,"limit 0x83"
+global,DS:83B0,car_pool,CAR[16],"0x28 bytes each"
+global,DS:866A,part_pool,PART[140],"8 bytes each"
+global,DS:05FC,game_clock,u32,"0x222 per hour, 0x1998 per 12-hour day (with DS:05FE)"
+global,DS:0604,clock_origin,u32,"tick_clock at the new game (with DS:0606)"
+global,DS:0282,end_flags,u16,"bit0 summer over, bit4 broke"
+global,DS:0284,location,u16,"1 garage, 2 street, 3 gas station, 5 newspaper"
+global,DS:0610,demo_mode,u16,
+global,DS:49E0,list_buf,i16[],"[0] count, [1..] text ids"
+global,DS:2990,ad_buf,char[],"ad text being bought or sold"
+global,DS:29F8,ask_buf,char[],"'I'll take $' edit field"
+global,DS:29FF,garage_title,char[],"current car ad text"
+global,DS:2A3E,btn_change,char[8],"label of screen 4 Change button"
+global,DS:4F46,switch_old,CAR*,
+global,DS:4F48,switch_new,CAR*,
+global,DS:4F58,news_pic,i16,
+global,DS:4F5A,news_day,i16,
+global,DS:4F4E,NEWS_PICS,i16[5],"LIB2 #22-26"
+global,DS:7D16,forsale_head,i16,"first Used Cars model (HOT_DATA block 7)"
+global,DS:7D86,MODELS,u8[26][10],"{price, class, next_for_sale, spec, ad_text, picture} HOT_DATA block 1"
+global,DS:8DF0,MODEL_PICS,u8[26][10],"{b0, _, roof, scoop, rear_bumper, front_bumper} HOT_DATA block 2"
+global,DS:7682,MODEL_LAYOUT,u8[26][12],"overlay positions, HOT_DATA block 3"
+global,DS:70E4,MODEL_HOTSPOTS,u8[26][20],"5 hot-spot rectangles per model, HOT_DATA block 4"
+global,DS:818C,MODEL_POINTS,u8[26][6],"filler / windshield points, HOT_DATA block 5"
+global,DS:7FF8,OPPONENTS,u8[22][18],"HOT_DATA block 0"
+global,DS:2C02,TEXTS,char[1850],"message and ad texts, HOT_DATA block 6; id n = DS:2C02+n"
+global,DS:239E,UI_TEXTS,char[200],"button labels, HOT_DATA block 8; id n = DS:239E+n"
+global,DS:7844,STICKERS,i16[9][3],"{pic, dx, dy}, entries 1..8"
+global,DS:4806,PARTS,u8[44][8],"{price, grade, make, category, 0, text}"
+global,DS:4966,INIT_WEAR,i16[5],"0,0,-128,-128,0"
+global,DS:4970,race_wins,i16[4],"zeroed by new_game (race)"
+global,DS:4978,MANIFOLD_FITS,u8[3][5],"[engine grade][manifold grade]"
+global,DS:4988,CARB_FITS,u8[5][3],"[manifold grade][carb grade]"
+global,DS:4998,BAY_PICS,i16[5][5],"[slot][grade]"
+global,DS:49A2,bay_block_pic,i16,"0x438 V-6 / 0x439 V-8"
+global,DS:49CA,BOLT_PICS,i16[4],
+global,DS:49D2,TRANS_PICS,i16[4],
+global,DS:5030,TYRE_PICS,i16[3][4],
+global,DS:50C2,PAINT,u8[6][2],"EGA palette values for registers 6/7"
+global,DS:5082,MONTH_NAME,char*[4],
+global,DS:5126,CARBS_PER_MANIFOLD,i16[5],"1 1 3 2 2"
+global,DS:5130,BOLTS_PER_LAYER,i16[5],"1 2 2 2 2"
+global,DS:513C,LAYER_CATEGORY,i16[5],"0 3 2 2 2"
+global,DS:5148,BAY_LAYOUT,i16[6][6],
+global,DS:518C,bay_layout_cur,i16[6],
+global,DS:5184,BOLT_CTX,i16[],
+global,DS:5198,BOLT_SIDE,i16[],
+global,DS:556E,CLASS_PTS,i16[9],"top speed"
+global,DS:552E,CARB_PTS,i16[3][5],"top speed [carb][manifold]"
+global,DS:554C,ENGINE_PTS,i16[3],"top speed"
+global,DS:5552,TRANS_PTS,i16[4],"top speed"
+global,DS:8286,trans_pic,i16,
+global,DS:8290,bay_slot_pic,i16[5],
+global,DS:829A,bay_bolt_pic,i16[9],
+global,DS:82AC,bay_connector_pic,i16,"0 / 0x446 / 0x447"
+global,DS:82AE,bay_ctx,i16,
+global,DS:825E,car_x,i16,"set by car_draw"
+global,DS:8260,car_y,i16,
+global,DS:8272,sticker_x,i16,
+global,DS:8274,sticker_y,i16,
+global,DS:0446,pal_shadow_6,u8,"EGA palette shadow DS:0440+reg"
+global,DS:58D0,music_off,i16,"Squelch it toggle"

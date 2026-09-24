@@ -31,15 +31,15 @@ static Uint64 clock_start_ns;
 static Uint64 ticks_run;
 static u32 pit_div = PIT_DIV_GAME;
 
-/* Audio: the PC speaker's square wave. */
-static u16 spk_div;
-static bool spk_on;
-static double spk_phase;
-static double samples_per_tick_frac;
+/* Audio: see the PC-speaker section below. */
+static void run_tick(void);
+static void audio_dump_from_env(void);
+static void audio_dump_close(void);
 
 /* Mouse: position in window-logical units and accumulated relative motion. */
 static float mouse_x, mouse_y;
 static float mouse_dx, mouse_dy;
+static float mickey_x, mickey_y;
 
 static void process_events(void);
 
@@ -69,6 +69,7 @@ bool host_init(const char *dir, int window_scale, bool fullscreen)
     } else {
         fprintf(stderr, "audio unavailable: %s\n", SDL_GetError());
     }
+    audio_dump_from_env();
 
     clock_start_ns = SDL_GetTicksNS();
     ticks_run = 0;
@@ -78,6 +79,7 @@ bool host_init(const char *dir, int window_scale, bool fullscreen)
 void host_shutdown(void)
 {
     if (gamepad) SDL_CloseGamepad(gamepad);
+    audio_dump_close();
     if (audio) SDL_DestroyAudioStream(audio);
     if (texture) SDL_DestroyTexture(texture);
     if (renderer) SDL_DestroyRenderer(renderer);
@@ -116,34 +118,224 @@ void host_set_pit_divisor(u16 divisor)
     pit_div = d;
 }
 
-static void audio_for_one_tick(void)
+/* ---------------------------------------------------------------- PC speaker (audio)
+ *
+ * Emulated timeline, in PIT input clocks (PIT_HZ): tick n of the game timer starts at tl_tick and
+ * everything the tick handler writes is stamped there; code outside the handler runs at tl_now =
+ * tl_tick + the busy-wait time spent since that tick (host_busy_wait_ns). The speaker is modelled
+ * at clock resolution: PIT channel 2 in mode 3 (square wave, count reloaded at every output
+ * transition, restarted on a rising gate) and port 61h bit 0 (gate) / bit 1 (data):
+ *     level = bit1 && (bit0 ? OUT2 : 1)
+ * The 1-bit level is integrated exactly over each output sample (a box filter: pulses shorter than
+ * a sample keep their energy, the 25 / 39.8 kHz "silent" carriers average out instead of
+ * aliasing), then a DC blocker (the speaker is AC coupled; ~20 Hz, below the 25 Hz engine note)
+ * and a one-pole low-pass (~10 kHz). Samples are rendered lazily: up to the stamp of each write, and
+ * up to each tick boundary (so the device gets one tick of audio per tick, behind the timeline). */
+
+#define HP_R  0.99715       /* 1 - 2*pi*20/44100: ~20 Hz DC blocker */
+#define LP_A  0.7603        /* 1 - exp(-2*pi*10000/44100): ~10 kHz one-pole low-pass */
+#define SPEAKER_GAIN (SPEAKER_AMPLITUDE * 2.0)   /* a full square swings +-SPEAKER_AMPLITUDE */
+#define AUDIO_MAX_QUEUED  (AUDIO_RATE / 4)       /* samples; beyond that output is dropped */
+#define AUDIO_LEAD_IN     (AUDIO_RATE / 25)      /* 40 ms of silence after an underrun */
+
+static Uint64 tl_tick, tl_now;          /* PIT clocks */
+static Uint64 tl_frac;                  /* ns->clock conversion remainder (units of 1/1e9 clock) */
+static bool in_tick;                    /* tick handler running: busy waits do not nest ticks */
+static bool realtime = true;
+
+static u8 port61;
+static u32 pit2_latch = 0x10000, pit2_count = 0x10000;
+static bool out2 = true;
+static Uint64 out2_next;                /* clock of the next OUT2 transition (gate on) */
+
+static Uint64 r_pos;                    /* rendered up to, in clock * AUDIO_RATE units */
+static Uint64 r_sample_end = PIT_HZ;    /* end of the sample being integrated (same units) */
+static Uint64 r_acc;                    /* high time inside that sample (same units) */
+static double hp_x1, hp_y1, lp_z;
+static s16 r_buf[2048];
+static int r_n;
+static FILE *dump_f;
+static u32 dump_samples;
+
+static u32 half_period(u32 count, bool high)
 {
-    if (!audio) return;
-    samples_per_tick_frac += (double)AUDIO_RATE * pit_div / PIT_HZ;
-    int n = (int)samples_per_tick_frac;
-    samples_per_tick_frac -= n;
-    /* Drop output if the device is far behind (e.g. after a stall) instead of building latency. */
-    if (SDL_GetAudioStreamQueued(audio) > AUDIO_RATE / 4 * (int)sizeof(s16)) return;
-    s16 buf[4096];
-    if (n > 4096) n = 4096;
-    double freq = (double)PIT_HZ / (spk_div ? spk_div : 65536);
-    double step = freq / AUDIO_RATE;
-    for (int i = 0; i < n; i++) {
-        s16 v = 0;
-        if (spk_on) {
-            v = spk_phase < 0.5 ? SPEAKER_AMPLITUDE : -SPEAKER_AMPLITUDE;
-            spk_phase += step;
-            spk_phase -= (int)spk_phase;
-        }
-        buf[i] = v;
-    }
-    SDL_PutAudioStreamData(audio, buf, n * (int)sizeof(s16));
+    u32 h = high ? (count + 1) / 2 : count / 2;     /* mode 3, odd counts: high one clock longer */
+    return h ? h : 1;
 }
+
+static void put_le(u8 *p, u32 v, int n)
+{
+    for (int i = 0; i < n; i++) p[i] = (u8)(v >> (8 * i));
+}
+
+static void wav_header(FILE *f, u32 samples)     /* 16-bit mono PCM at AUDIO_RATE */
+{
+    u8 h[44];
+    memcpy(h, "RIFF", 4);           put_le(h + 4, 36 + samples * 2, 4);
+    memcpy(h + 8, "WAVEfmt ", 8);   put_le(h + 16, 16, 4);
+    put_le(h + 20, 1, 2);           put_le(h + 22, 1, 2);
+    put_le(h + 24, AUDIO_RATE, 4);  put_le(h + 28, AUDIO_RATE * 2, 4);
+    put_le(h + 32, 2, 2);           put_le(h + 34, 16, 2);
+    memcpy(h + 36, "data", 4);      put_le(h + 40, samples * 2, 4);
+    fseek(f, 0, SEEK_SET);
+    fwrite(h, 1, sizeof h, f);
+    fseek(f, 0, SEEK_END);
+}
+
+static void audio_flush(void)
+{
+    if (r_n == 0) return;
+    if (dump_f) { fwrite(r_buf, sizeof(s16), (size_t)r_n, dump_f); dump_samples += (u32)r_n; }
+    if (audio) {
+        int queued = SDL_GetAudioStreamQueued(audio) / (int)sizeof(s16);
+        /* Drop output if the device is far behind (e.g. after a stall) instead of building latency. */
+        if (queued <= AUDIO_MAX_QUEUED) {
+            if (queued == 0) {                      /* underrun: rebuild a little latency */
+                static const s16 silence[AUDIO_LEAD_IN];
+                SDL_PutAudioStreamData(audio, silence, sizeof silence);
+            }
+            SDL_PutAudioStreamData(audio, r_buf, r_n * (int)sizeof(s16));
+        }
+    }
+    r_n = 0;
+}
+
+static void emit_sample(double x)
+{
+    double y = x - hp_x1 + HP_R * hp_y1;
+    hp_x1 = x;
+    hp_y1 = y;
+    lp_z += LP_A * (y - lp_z);
+    double s = lp_z * SPEAKER_GAIN;
+    r_buf[r_n++] = (s16)(s > 32767 ? 32767 : s < -32767 ? -32767 : s);
+    if (r_n == (int)SDL_arraysize(r_buf)) audio_flush();
+}
+
+/* Renders the speaker output up to PIT clock clk (exclusive). */
+static void render_to(Uint64 clk)
+{
+    Uint64 target = clk * AUDIO_RATE;
+    while (r_pos < target) {
+        bool gate = port61 & 1;
+        Uint64 end = SDL_min(target, r_sample_end);
+        if (gate) end = SDL_min(end, out2_next * AUDIO_RATE);
+        if ((port61 & 2) && (!gate || out2)) r_acc += end - r_pos;
+        r_pos = end;
+        if (gate && r_pos == out2_next * AUDIO_RATE) {
+            out2 = !out2;
+            pit2_count = pit2_latch;                /* a new count takes effect at a transition */
+            out2_next += half_period(pit2_count, out2);
+        }
+        if (r_pos == r_sample_end) {
+            emit_sample((double)r_acc / PIT_HZ);
+            r_acc = 0;
+            r_sample_end += PIT_HZ;
+        }
+    }
+}
+
+/* One timer tick at the next tick boundary: audio up to it, then the tick handler (INT 8). */
+static void run_tick(void)
+{
+    ticks_run++;
+    Uint64 t = SDL_max(tl_tick + pit_div, tl_now);
+    render_to(t);
+    audio_flush();
+    tl_tick = tl_now = t;
+    in_tick = true;
+    if (tick_handler) tick_handler();
+    in_tick = false;
+}
+
+static void pace_until(Uint64 due_ns)
+{
+    for (;;) {
+        Uint64 now = SDL_GetTicksNS();
+        if (now >= due_ns) return;
+        process_events();
+        SDL_DelayPrecise(SDL_min(due_ns - now, SDL_NS_PER_MS));
+    }
+}
+
+void host_pit2_divisor(u16 divisor)
+{
+    render_to(tl_now);
+    pit2_latch = divisor ? divisor : 0x10000u;
+}
+
+void host_port61(u8 value)
+{
+    render_to(tl_now);
+    bool was = port61 & 1, gate = value & 1;
+    port61 = value;
+    if (gate && !was) {                             /* rising gate restarts the square wave */
+        out2 = true;
+        pit2_count = pit2_latch;
+        out2_next = tl_now + half_period(pit2_count, true);
+    } else if (!gate) {
+        out2 = true;                                /* mode 3: OUT2 goes high while the gate is low */
+    }
+}
+
+u8 host_port61_get(void) { return port61; }
 
 void host_speaker(u16 divisor, bool on)
 {
-    spk_div = divisor;
-    spk_on = on;
+    host_pit2_divisor(divisor);
+    host_port61(on ? (u8)(port61 | 3) : (u8)(port61 & ~3));
+}
+
+void host_busy_wait_ns(Uint64 ns)
+{
+    Uint64 num = ns * PIT_HZ + tl_frac;
+    Uint64 clk = num / SDL_NS_PER_SECOND;
+    tl_frac = num % SDL_NS_PER_SECOND;
+    if (in_tick) { tl_now += clk; return; }         /* (not expected: a busy wait inside the ISR) */
+    for (;;) {
+        Uint64 next = tl_tick + pit_div;
+        if (tl_now + clk < next) { tl_now += clk; break; }
+        clk -= next - tl_now;
+        tl_now = next;
+        if (realtime) pace_until(tick_due_ns(ticks_run + 1));
+        run_tick();                                 /* the interrupt fires in the middle of the loop */
+    }
+    if (realtime) pace_until(tick_due_ns(ticks_run) + (tl_now - tl_tick) * SDL_NS_PER_SECOND / PIT_HZ);
+}
+
+void host_busy_wait_us(u32 us) { host_busy_wait_ns((Uint64)us * 1000); }
+
+void host_set_realtime(bool on) { realtime = on; }
+
+void host_run_tick_now(void) { run_tick(); }
+
+Uint64 host_audio_clock(void) { return tl_now; }
+
+bool host_audio_dump_begin(const char *wav_path)
+{
+    audio_dump_close();
+    dump_f = fopen(wav_path, "wb");
+    if (!dump_f) return false;
+    dump_samples = 0;
+    wav_header(dump_f, 0);
+    return true;
+}
+
+void host_audio_dump_end(void) { audio_dump_close(); }
+
+static void audio_dump_close(void)
+{
+    if (!dump_f) return;
+    render_to(tl_now);
+    audio_flush();
+    wav_header(dump_f, dump_samples);
+    fclose(dump_f);
+    dump_f = NULL;
+}
+
+static void audio_dump_from_env(void)
+{
+    const char *path = SDL_getenv("SR_AUDIO_DUMP");
+    if (path && *path && !host_audio_dump_begin(path)) fprintf(stderr, "cannot write %s\n", path);
 }
 
 /* Developer aid: SR_SNAPSHOT_DIR, see host.h. */
@@ -226,9 +418,7 @@ void host_pump(void)
     /* at most 0.5 s of catch-up per call */
     int budget = (int)(PIT_HZ / 2 / pit_div) + 1;
     while (tick_due_ns(ticks_run + 1) <= now && budget-- > 0) {
-        ticks_run++;
-        if (tick_handler) tick_handler();
-        audio_for_one_tick();
+        run_tick();                                 /* ticks_run++, audio up to the tick, handler */
         worked = true;
     }
     if (budget < 0) {                               /* fell too far behind: resynchronise the clock */
@@ -253,6 +443,15 @@ void host_pump(void)
 /* VGA 320x200 (mode 0Dh on a VGA) refresh: 25.175 MHz / (800 x 449) = 70.086 Hz. */
 #define VRETRACE_NUM (800ull * 449ull * SDL_NS_PER_SECOND)
 #define VRETRACE_DEN (25175000ull)
+
+#define VRETRACE_WINDOW_NS 1500000ull     /* 49 blank lines x 31.8 us */
+
+bool host_in_vretrace(void)
+{
+    Uint64 since = SDL_GetTicksNS() - clock_start_ns;
+    Uint64 frame_start = since * VRETRACE_DEN / VRETRACE_NUM * VRETRACE_NUM / VRETRACE_DEN;
+    return since - frame_start < VRETRACE_WINDOW_NS;
+}
 
 void host_wait_vretrace(void)
 {
@@ -387,6 +586,17 @@ static void process_events(void)
         case SDL_EVENT_MOUSE_MOTION:
             mouse_dx += ev.motion.xrel;             /* mickeys: window pixels, as the driver's default */
             mouse_dy += ev.motion.yrel;
+            {
+                /* game picture size in window coordinates (4:3 letterbox) */
+                int ww = 0, wh = 0;
+                SDL_GetWindowSize(window, &ww, &wh);
+                float vw = (float)ww, vh = (float)wh;
+                if (vw * 3 > vh * 4) vw = vh * 4 / 3; else vh = vw * 3 / 4;
+                if (vw >= 1 && vh >= 1) {
+                    mickey_x += ev.motion.xrel * 2.0f * (float)frame_w / vw;
+                    mickey_y += ev.motion.yrel * 2.0f * (float)frame_h / vh;
+                }
+            }
             SDL_ConvertEventToRenderCoordinates(renderer, &ev);
             mouse_x = ev.motion.x;
             mouse_y = ev.motion.y;
@@ -427,6 +637,21 @@ void host_mouse_motion(s16 *dx, s16 *dy)
     if (dy) *dy = (s16)mouse_dy;
     mouse_dx -= (s16)mouse_dx;
     mouse_dy -= (s16)mouse_dy;
+}
+
+void host_mouse_mickeys(s16 *mx, s16 *my)
+{
+    process_events();
+    s16 x = (s16)mickey_x, y = (s16)mickey_y;
+    mickey_x -= x;
+    mickey_y -= y;
+    if (mx) *mx = x;
+    if (my) *my = y;
+}
+
+void host_mouse_set_relative(bool on)
+{
+    if (window) SDL_SetWindowRelativeMouseMode(window, on);
 }
 
 bool host_joy_read(s16 *x, s16 *y, u8 *buttons)

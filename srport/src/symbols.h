@@ -446,6 +446,7 @@
 #define DS_racing                                    0x8ACA  /* race, u8 */
 #define DS_cpu_speed                                 0x8ACC  /* platform, u16 */
 #define DS_opp_sprites                               0x8ACE  /* race, Pic far*[13] */
+#define DS_anim_engine_ref                           0x8B7C  /* sound, s16 */
 #define DS_pic_mirror_sky                            0x8B7E  /* race, Pic far* */
 #define DS_centre_ptr                                0x8B82  /* race, far u16* */
 #define DS_opp_alongside                             0x8BC2  /* race, u16 */
@@ -698,9 +699,14 @@
 #define FN_gfx_init                                  0x0F381859u  /* video, far void (Desc far *a; Desc far *b) */
 #define FN_ega_set_palreg                            0x0F381F4Bu  /* video, far void (int reg; int colour) */
 #define FN_ega_set_palette                           0x0F381FA4u  /* video, far void (u8 *pal16) */
+#define FN_status_init                               0x0F382022u  /* video, far void (int y) */
+#define FN_status_print                              0x0F3820A1u  /* video, far void (int x; char *s; int w) */
 #define FN_money_add                                 0x0F3821C0u  /* race, far void(int) */
+#define FN_status_label                              0x0F382213u  /* video, far void (char *s) */
 #define FN_gear_label                                0x0F3822E9u  /* race, far void(int) */
 #define FN_screen_fill_rect                          0x0F38231Au  /* video, far void (int x; int y; int w; int h; u8 c) */
+#define FN_show_picture                              0x0F382554u  /* video, far void (int id; int clr) */
+#define FN_show_picture_at                           0x0F382638u  /* video, far void (int id; int x; int y; int clr) */
 #define FN_screen_text                               0x0F382656u  /* video, far void (int x; int y; char *s) */
 #define FN_screen_hline                              0x0F3826A4u  /* video, far void (int x; int y; int w) */
 #define FN_screen_save_rect                          0x0F3826F2u  /* video, far Desc far *(int x; int y; int w; int h; Desc  */
@@ -800,9 +806,14 @@
 #define FN_ega_vram_cache_strips                     0x0F38819Au  /* video, near */
 #define FN_car_compose                               0x0F388866u  /* garage, far void(...) */
 #define FN_car_draw                                  0x0F388E48u  /* garage, far void(int mode, int model, int flags, int sti */
+#define FN_arena_clear                               0x0F389EBCu  /* platform, far void (void) */
 #define FN_arena_init                                0x0F389EE9u  /* platform, far void (void) */
+#define FN_arena_low_shrink                          0x0F389F1Au  /* platform, far void (int n) */
 #define FN_arena_alloc                               0x0F389F2Cu  /* platform, far void far *(int n; int mode) */
 #define FN_arena_bitmap_alloc                        0x0F389FCEu  /* video, far Desc far *(int w; int h; int flags; int pool */
+#define FN_arena_reset                               0x0F38A054u  /* platform, far void (void) */
+#define FN_arena_reset_stacks                        0x0F38A07Eu  /* platform, far void (void) */
+#define FN_arena_pop_low                             0x0F38A09Eu  /* platform, far void (int n) */
 #define FN_arena_pop                                 0x0F38A0B8u  /* platform, far void (int k) */
 #define FN_rect_intersect                            0x0F38A0FAu  /* video, far i16 *(i16 *a; i16 *b; i16 *out) */
 #define FN_rect_clip_to_view                         0x0F38A198u  /* video, far i16 *(int x; int y; int w; int h; i16 *out) */
@@ -817,7 +828,10 @@
 #define FN_bitmap_blit_masked_shift                  0x0F38AF50u  /* video, far void (Desc far *s; Desc far *d; i16 *r; int  */
 #define FN_bitmap_composite_behind                   0x0F38B0F2u  /* video, far void (Desc far *s; Desc far *d; int x; int y */
 #define FN_bitmap_blit_at                            0x0F38B31Fu  /* video, far void (Desc far *s; Desc far *d; int dx; int  */
+#define FN_pic_blit_at                               0x0F38B360u  /* video, far void (Desc far *d; int id; u8 x; u8 y) */
 #define FN_pic_draw_masked                           0x0F38B3B4u  /* video, far void (Desc far *d; int id; u8 x; u8 y; int f */
+#define FN_mask_and_rect                             0x0F38B41Bu  /* video, far void (Desc far *s; Desc far *d; Rect *r) */
+#define FN_far_memcpy                                0x0F38B502u  /* video, far void (void far *src; void far *dst; u16 n) */
 #define FN_bitmap_extract                            0x0F38B51Eu  /* video, far Desc far *(Desc far *s; i16 *r; int pool) */
 #define FN_page_copy_rect                            0x0F38B5AAu  /* video, far void (Desc far *s; Desc far *d; int x0; int  */
 #define FN_tire_change_anim                          0x0F38BE93u  /* garage, far void(int *old_pics, int *new_pics) */

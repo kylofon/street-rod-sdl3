@@ -144,3 +144,11 @@ global,DS:8248,g_overscan,u8,border colour for ega_set_palette
 global,DS:8249,g_pal_visible,u8,0 after pal_black 1 after pal_normal
 global,DS:824C,g_text_end_x,i16,end x of the last ega_draw_text
 global,DS:824E,g_text_y,i16,y of the last ega_draw_text
+func,0f38:2022,status_init,far void (int y),"status line at row y: DS:8252 = y+1, 8254 = A0h, 8250 = 58h; scheme +37h..+3Bh; clears 320x10"
+func,0f38:20a1,status_print,"far void (int x; char *s; int w)","status-line text; x < 0 centred in w (0 = DS:8254) from DS:8250"
+func,0f38:2213,status_label,far void (char *s),"label at x = 0 in the status line, then the bankroll (money_add(0)) unless s[1] is 'G' or ' '"
+func,0f38:2554,show_picture,"far void (int id; int clr)","pic_get(id, 2) to page B at (DS:04BE, DS:04C0), clipped to DS:04C2 rows; clr >= 0 clears first; mirror; arena_pop(1)"
+func,0f38:2638,show_picture_at,"far void (int id; int x; int y; int clr)",DS:04BE = x; DS:04C0 = y; show_picture
+func,0f38:b360,pic_blit_at,"far void (Desc far *d; int id; u8 x; u8 y)","pic_get(id, 2), bitmap_blit_at(..., 3), DS:70A8 = picture, arena_pop(1)"
+func,0f38:b41b,mask_and_rect,"far void (Desc far *s; Desc far *d; Rect *r)",clip_rect then d.mask &= s.mask over the rect
+func,0f38:b502,far_memcpy,"far void (void far *src; void far *dst; u16 n)",movedata

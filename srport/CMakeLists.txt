@@ -28,3 +28,13 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:srport> $<TARGET_FILE_DIR:srport>
         COMMAND_EXPAND_LISTS)
 endif()
+
+# Developer check of the sound module (tools/snd_dump.c; port/spec/sound.md, PORTING.md "Sound"):
+# renders songs / effects offline through the host speaker model and logs the sequencer events.
+file(GLOB SR_SOUND_SOURCES CONFIGURE_DEPENDS src/sound/*.c)
+add_executable(srsnd-dump tools/snd_dump.c src/host.c src/mem.c ${SR_SOUND_SOURCES})
+target_include_directories(srsnd-dump PRIVATE src)
+target_link_libraries(srsnd-dump PRIVATE SDL3::SDL3)
+if(NOT MSVC)
+    target_compile_options(srsnd-dump PRIVATE -Wall -Wextra -Wno-unused-parameter -fno-strict-aliasing)
+endif()

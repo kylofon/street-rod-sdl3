@@ -229,9 +229,14 @@ func,0f38:182c,pal_shadow_swap,far void (void),video,,swap 17 bytes DS:0440 <-> 
 func,0f38:1859,gfx_init,far void (Desc far *a; Desc far *b),video,,"pages, mode constants DS:8236-823E, colour scheme, page table DS:7316"
 func,0f38:1f4b,ega_set_palreg,far void (int reg; int colour),video,,waits for vretrace; INT 10h AX=1000h; see video | waits for retrace; INT 10h AX=1000h/1001h via int86x; shadow DS:0440
 func,0f38:1fa4,ega_set_palette,far void (u8 *pal16),video,,INT 10h AX=1002h via int86x; values >= 8 get |10h; see video | INT 10h AX=1002h (16 + overscan DS:8248); values > 7 get |10h
+func,0f38:2022,status_init,far void (int y),video,,"status line at row y: DS:8252 = y+1, 8254 = A0h, 8250 = 58h; scheme +37h..+3Bh; clears 320x10"
+func,0f38:20a1,status_print,far void (int x; char *s; int w),video,,status-line text; x < 0 centred in w (0 = DS:8254) from DS:8250
 func,0f38:21c0,money_add,far void(int),race,,money += sign-extended 16-bit delta; redraw bankroll
+func,0f38:2213,status_label,far void (char *s),video,,"label at x = 0 in the status line, then the bankroll (money_add(0)) unless s[1] is 'G' or ' '"
 func,0f38:22e9,gear_label,far void(int),race,,
 func,0f38:231a,screen_fill_rect,far void (int x; int y; int w; int h; u8 c),video,,"page B + mirror, pointer hidden"
+func,0f38:2554,show_picture,far void (int id; int clr),video,,"pic_get(id, 2) to page B at (DS:04BE, DS:04C0), clipped to DS:04C2 rows; clr >= 0 clears first; mirror; arena_pop(1)"
+func,0f38:2638,show_picture_at,far void (int id; int x; int y; int clr),video,,DS:04BE = x; DS:04C0 = y; show_picture
 func,0f38:2656,screen_text,far void (int x; int y; char *s),video,,slot 3 on page B + mirror
 func,0f38:26a4,screen_hline,far void (int x; int y; int w),video,,hline on page B + mirror
 func,0f38:26f2,screen_save_rect,far Desc far *(int x; int y; int w; int h; Desc far *dst),video,,page B rect into a bitmap
@@ -331,9 +336,14 @@ func,0f38:8126,ega_blit_4planes,near,video,,garage: per plane SEQ2/GC4 + 2595:00
 func,0f38:819a,ega_vram_cache_strips,near,video,,garage: strips cached in page DS:731E (write mode 2 fill; 21a0:1e2d)
 func,0f38:8866,car_compose,far void(...),garage,,base picture + roof/scoop/bumper overlays (DS:8DF0) + sticker + driver + wheels
 func,0f38:8e48,car_draw,"far void(int mode, int model, int flags, int sticker, int driver, int y, int smoke, int *tyre_pics)",garage,,"2 leave gas station, 3 parked, 4 drive in, 6 drive out, 7 See it, 8 after customising"
+func,0f38:9ebc,arena_clear,far void (void),platform,,"arena bookkeeping reset: DS:7B14 = DS:8F00 = DS:8B02 = 0, DS:7D80 = 3Ch, DS:78DE = DS:8B7A = 65000, DS:0294 = 0"
 func,0f38:9ee9,arena_init,far void (void),platform,,DS:6CD0 = far_alloc(65000)
+func,0f38:9f1a,arena_low_shrink,far void (int n),platform,,DS:8B02[DS:7B14] -= n
 func,0f38:9f2c,arena_alloc,far void far *(int n; int mode),platform,,4 stack-style modes over DS:8B02[]
 func,0f38:9fce,arena_bitmap_alloc,far Desc far *(int w; int h; int flags; int pool),video,,descriptor + planes (+ mask) from the arena
+func,0f38:a054,arena_reset,far void (void),platform,,like arena_clear but keeps DS:78DE (top permanent)
+func,0f38:a07e,arena_reset_stacks,far void (void),platform,,"DS:7B14 = 0, DS:8B02 = DS:8F00, DS:7D80 = 3Ch, DS:8B7A = DS:78DE"
+func,0f38:a09e,arena_pop_low,far void (int n),platform,,"n = 0: DS:7B14 = 0, else DS:7B14 -= n"
 func,0f38:a0b8,arena_pop,far void (int k),platform,,releases top allocations
 func,0f38:a0fa,rect_intersect,far i16 *(i16 *a; i16 *b; i16 *out),video,,"{x0,y0,x1,y1}; NULL if empty"
 func,0f38:a198,rect_clip_to_view,far i16 *(int x; int y; int w; int h; i16 *out),video,,view DS:825A-8262
@@ -348,7 +358,10 @@ func,0f38:acbf,bitmap_make_shifted,far Desc far *(Desc far *s; int shift; Desc f
 func,0f38:af50,bitmap_blit_masked_shift,far void (Desc far *s; Desc far *d; i16 *r; int and_mask),video,,pre-shift then slot 2
 func,0f38:b0f2,bitmap_composite_behind,far void (Desc far *s; Desc far *d; int x; int y),video,,draw behind existing pixels (mask merge unless DS:5AA6)
 func,0f38:b31f,bitmap_blit_at,far void (Desc far *s; Desc far *d; int dx; int dy; int flags),video,,whole bitmap via slot 0
+func,0f38:b360,pic_blit_at,far void (Desc far *d; int id; u8 x; u8 y),video,,"pic_get(id, 2), bitmap_blit_at(..., 3), DS:70A8 = picture, arena_pop(1)"
 func,0f38:b3b4,pic_draw_masked,far void (Desc far *d; int id; u8 x; u8 y; int flag),video,,temp pic_get + af50 + free
+func,0f38:b41b,mask_and_rect,far void (Desc far *s; Desc far *d; Rect *r),video,,clip_rect then d.mask &= s.mask over the rect
+func,0f38:b502,far_memcpy,far void (void far *src; void far *dst; u16 n),video,,movedata
 func,0f38:b51e,bitmap_extract,far Desc far *(Desc far *s; i16 *r; int pool),video,,sub-rect into a new bitmap (slot 0 flags 3)
 func,0f38:b5aa,page_copy_rect,far void (Desc far *s; Desc far *d; int x0; int y0; int x1; int y1),video,,inclusive byte-aligned rect via slot 0
 func,0f38:be93,tire_change_anim,"far void(int *old_pics, int *new_pics)",garage,,tyre swap animation
@@ -964,6 +977,7 @@ global,DS:866A,part_pool,u8[140*8],game_flow,,part records | 8 bytes each
 global,DS:8ACA,racing,u8,race,,
 global,DS:8ACC,cpu_speed,u16,platform,cpu_class,
 global,DS:8ACE,opp_sprites,Pic far*[13],race,,opponent sprites
+global,DS:8B7C,anim_engine_ref,s16,sound,,subtracted from DS:825E for the engine note of the animation player 0f38:8e48 (0000:238c @245e); see video/garage
 global,DS:8B7E,pic_mirror_sky,Pic far*,race,,LIB2 #243
 global,DS:8B82,centre_ptr,far u16*,race,,&C of current row
 global,DS:8BC2,opp_alongside,u16,race,,opponent alongside flag

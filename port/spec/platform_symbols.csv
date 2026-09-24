@@ -258,3 +258,8 @@ global,DS:8DD2,lib2_count,u16,
 global,DS:8DD4,lib1_name,char *,
 global,DS:8DD6,lib2_name,char *,
 global,DS:8EF6,tq_default_prio,u16,10
+func,0f38:9ebc,arena_clear,far void (void),"arena bookkeeping reset: DS:7B14 = DS:8F00 = DS:8B02 = 0, DS:7D80 = 3Ch, DS:78DE = DS:8B7A = 65000, DS:0294 = 0"
+func,0f38:9f1a,arena_low_shrink,far void (int n),DS:8B02[DS:7B14] -= n
+func,0f38:a054,arena_reset,far void (void),"like arena_clear but keeps DS:78DE (top permanent)"
+func,0f38:a07e,arena_reset_stacks,far void (void),"DS:7B14 = 0, DS:8B02 = DS:8F00, DS:7D80 = 3Ch, DS:8B7A = DS:78DE"
+func,0f38:a09e,arena_pop_low,far void (int n),"n = 0: DS:7B14 = 0, else DS:7B14 -= n"

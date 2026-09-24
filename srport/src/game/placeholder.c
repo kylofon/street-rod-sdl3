@@ -1,60 +1,79 @@
-/* Skeleton stand-in for the game (removed when game_flow is ported): shows the title picture
- * (LIB1 #0) through the real unpacker and the EGA model, Esc quits. It proves the pipeline: EXE
- * loader, host, tick, keyboard, planar scan-out, library format. */
-#include <SDL3/SDL.h>
-#include <string.h>
-
+/* Skeleton stand-in for the game loop (removed when game_flow is ported).
+ *
+ * game_main runs what the original does after main's initialisation (platform_main_init) as far as
+ * the platform and video layers alone can show it: the title part of title_and_setup 0000:39c0 with a
+ * copy of the title sequence 0f38:0bf0 (California Dreams logo, title, credits: 400 ticks each or a
+ * key / click; the background tune), then the empty garage background of garage_screen 0000:6b06
+ * (LIB2 #32) with the status line and the mouse pointer, until Esc. Everything goes through the
+ * ported API (pictures, driver slots, palette, ui_wait). */
 #include "game/game.h"
-#include "host.h"
-#include "mem.h"
-#include "platform/ega.h"
-#include "platform/pic.h"
+#include "platform/platform.h"
+#include "platform/video.h"
+#include "sound/sound.h"
 
-static volatile bool quit;
-
-static void on_key(u8 byte)
+/* Copy of title_sequence 0f38:0bf0 (game_flow.md §4.2) — VGA path. */
+static void title_sequence(void)
 {
-    if (byte == 0x01) quit = true;            /* Esc make code */
-}
-
-static void show_lib_picture(const char *lib, int index)
-{
-    char *path = host_game_path(lib, false);
-    if (!path) host_fatal("%s not found in the game folder", lib);
-    size_t len;
-    u8 *f = SDL_LoadFile(path, &len);
-    host_free(path);
-    if (!f) host_fatal("cannot read %s", lib);
-
-    u16 count = (u16)(f[0] | f[1] << 8);
-    if (index >= count) host_fatal("%s has no picture %d", lib, index);
-    const u8 *rec = f + 2 + index * 30;
-    u16 w = (u16)(rec[0] | rec[1] << 8), h = (u16)(rec[2] | rec[3] << 8);
-    u16 raw = (u16)(rec[4] | rec[5] << 8);
-    u32 off = (u32)(rec[24] | rec[25] << 8 | rec[26] << 16 | (u32)rec[27] << 24);
-    u16 size = (u16)(rec[28] | rec[29] << 8);
-    const u8 *data = f + 2 + count * 30 + off;
-    if (data[0] != 0xBC) host_fatal("%s picture %d: bad marker", lib, index);
-
-    u8 *pix = SDL_calloc(1, (size_t)raw + 0x100);
-    pic_unpack(data + 1, pix, (u16)(size - 1), rec + 7, 16);
-    u16 bpr = (u16)(w / 8), plane = (u16)(bpr * h);
-    for (int p = 0; p < 4; p++)
-        for (int y = 0; y < h && y < 200; y++)
-            memcpy(ega_plane(p) + y * EGA_BYTES_PER_LINE, pix + p * plane + y * bpr, bpr);
-    ega_touch();
-    SDL_free(pix);
-    SDL_free(f);
+    u16 save = DSW(0x04C2);                       /* picture clip height */
+    drv_pal_black();
+    DSW(0x04C2) = 200;
+    show_picture_at(3, 0x28, 0x28, 0);            /* LIB1 #2 "California Dreams presents" */
+    pic_free(3);
+    drv_pal_normal();
+    DSW(DS_g_mirror) = 0;
+    show_picture(1, -1);                          /* LIB1 #0 the title, on the back page */
+    pic_free(1);
+    wait_click_or_key(400);
+    drv_pal_normal();
+    drv_blinds(desc_planes(g_front()), desc_planes(g_back()));  /* title visible */
+    show_picture(4, 0);                           /* LIB1 #3 credits, on the back page */
+    pic_free(4);
+    wait_click_or_key(400);
+    ega_set_palette(DS_pal_intro_tab);            /* DS:02D4 credits palette */
+    drv_blinds(desc_planes(g_front()), desc_planes(g_back()));  /* credits visible */
+    wait_click_or_key(400);
+    DSW(0x04C2) = save;
+    screen_fill_rect(0, 0, 0x140, 200, 0);
+    drv_blinds(desc_planes(g_front()), desc_planes(g_back()));  /* black */
 }
 
 int game_main(void)
 {
-    host_set_kbd_handler(on_key);
-    for (int i = 0; i < 16; i++) {                  /* game palette DS:0440, as pal_set 0f38:1fa4 */
-        u8 v = mem[lin(DGROUP, (u16)(0x0440 + i))];
-        ega_set_palette_reg(i, v >= 8 ? (u8)(v | 0x10) : v);
+    /* title_and_setup 0000:39c0 (game_flow.md §4.2), without the game_flow parts */
+    gfx_screen_mode(0);
+    tune_start(2, 10);
+    title_sequence();
+    drv_pal_black();
+    gfx_screen_mode(1);
+    rnd(-1);
+    drv_pal_black();
+    if (DSW(DS_libs_preloaded) == 0) lib_read_dir(2);
+    cursor_ctl(-4);
+    if (DSW(DS_libs_preloaded) == 0) {
+        hot_data_load();
+        if (DSS(DS_driver_id) == -2) pic_park_list(DS_resident_pics);
     }
-    show_lib_picture("LIB1", 0);
-    while (!quit) host_pump();
-    return 0;
+    pic_load_list(DS_resident_pics, 1);
+    cursor_ctl(-2);
+
+    /* the garage without a car (garage_screen 0000:6b06, garage.md §4.7) */
+    if (DSC(DS_g_ptr_show) > 0) cursor_ctl(-4);
+    cursor_ctl(0);
+    show_picture(0x408, -1);                      /* LIB2 #32 */
+    pal_reg12_5();
+    drv_pal_normal();
+    page_copy_rect(g_back(), g_front(), 0, 0, 0x13F, 199);
+    status_label(ds_str(DSW(0x49DC)));            /* "Bankroll:" and the money */
+    /* the pointer's show counter starts at 0 and title_and_setup hid it once; the game's screens
+     * before the garage show it again: here, show it until visible */
+    while (DSC(DS_g_ptr_show) <= 0) cursor_ctl(-2);
+
+    /* wait for Esc: ui_wait returns 3EBh on any key with DS:05D0 set */
+    DSW(DS_wait_any_key) = 1;
+    for (;;) {
+        s16 r = ui_wait(1000);
+        if (r == 0x3EB && DSW(DS_wait_key) == 0x1B) break;
+    }
+    DSW(DS_wait_any_key) = 0;
+    platform_exit();
 }

@@ -13,8 +13,17 @@
 /* 0f38:799a mouse_reset: 0 if the INT 33h vector 0000:00CC is null, else INT 33h AX=0 (FFFFh = a
  * mouse). PORT: the host always has a mouse driver (the vector test cannot fail); the "reset" puts the
  * host pointer in relative mode, since the game only reads motion and draws its own pointer. */
+/* Developer aid (host.h, SR_KEYS mouse entries): the pointer position DS:472A/472C. */
+static bool pointer_query(s16 *x, s16 *y)
+{
+    *x = DSS(DS_cursor_x);
+    *y = DSS(DS_cursor_y);
+    return true;
+}
+
 s16 mouse_reset(void)
 {
+    host_set_pointer_query(pointer_query);
     host_mouse_set_relative(true);
     s16 mx, my;
     host_mouse_mickeys(&mx, &my);                 /* the reset clears the mickey counters */

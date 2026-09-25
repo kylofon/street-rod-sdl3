@@ -42,6 +42,7 @@ bool race_debug_main(void)
     gfx_screen_mode(0);
     drv_pal_black();
     gfx_screen_mode(1);
+    rnd(-1);                                       /* seed from the time of day, as title_and_setup */
     if (DSW(DS_libs_preloaded) == 0) lib_read_dir(2);
     cursor_ctl(-4);
     track_build_all();

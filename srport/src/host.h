@@ -104,9 +104,21 @@ void  host_free(void *p);
 _Noreturn void host_fatal(const char *fmt, ...);
 
 /* ---- Developer aids (environment variables):
- *   SR_SNAPSHOT_DIR=dir   every presented frame >= 2 s after the previous one is saved as snapNNNN.bmp
+ *   SR_SNAPSHOT_DIR=dir   every presented frame >= 2 s (SR_SNAPSHOT_MS=n: n ms) after the previous
+ *                         one is saved as snapNNNN.bmp
  *                         (works with SDL_VIDEO_DRIVER=dummy)
  *   SR_KEYS="<seconds>:<xt>[+<xt>...],..."  presses (in order) and releases (in reverse) the XT keys
  *                         at that many seconds after start-up; a "p" after the codes only presses
  *                         (held), an "r" only releases: "9:48p,20:48r" holds Up for 11 s. Grey keys
- *                         are written with their E0 prefix as e048. */
+ *                         are written with their E0 prefix as e048.
+ *                         Mouse entries (in the same list, e.g. "4:c160.120,6:lp,9:lr"):
+ *                           m<x>.<y>   move the game's pointer to screen pixel (x, y)
+ *                           c<x>.<y>   move there, then left-click (150 ms); C<x>.<y> right-click
+ *                           l / r      left / right click where the pointer is
+ *                           lp lr rp rr  hold / let go of the left / right button
+ *                         A move feeds mouse motion until the pointer (host_set_pointer_query) is
+ *                         there, 3 s at most; the next entry waits until the action is done. */
+
+/* Developer aid: where the game's own pointer is (screen pixels), for scripted SR_KEYS mouse moves.
+ * Installed by the platform (its pointer is DS:472A/472C); returns false if unknown. */
+void host_set_pointer_query(bool (*query)(s16 *x, s16 *y));

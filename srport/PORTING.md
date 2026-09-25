@@ -131,7 +131,23 @@ with it behaves as on the card.
 ## Developer aids
 
 `SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy SR_SNAPSHOT_DIR=dir SR_KEYS="2:01"` runs headless,
-saves frames and presses Esc after 2 s (see `host.h`). The original's switches follow the port's
+saves frames and presses Esc after 2 s (see `host.h`). `SR_SNAPSHOT_MS` sets the snapshot interval.
+`SR_KEYS` also scripts the mouse: `m<x>.<y>` moves the game's pointer to a screen pixel,
+`c<x>.<y>` / `C<x>.<y>` moves and left / right clicks, `l` / `r` click in place, `lp` `lr` `rp` `rr`
+hold and release a button (the host feeds relative motion until the pointer, reported by the
+platform through `host_set_pointer_query`, is there).
+`SR_DEBUG_RACE=drag|road|cruise|bob` (race, `hooks_race.c`) starts a race or a drive at once with a
+stock car (`SR_DEBUG_MODEL`, `SR_DEBUG_OPP`).
+
+`python ../tools/srrun.py OUT SECONDS "script" [switches] --fresh-game` runs it all headless on a copy
+of the game folder and writes the frames as PNGs plus a contact sheet `OUT/_sheet.png`, e.g. a drag
+race with the gas held and four shifts:
+
+```
+SR_DEBUG_RACE=drag python tools/srrun.py work/drag 60 "8:e048p,10:39,12:39,14:39,16:39,40:e048r" --fresh-game --ms 250
+```
+
+From the title to the garage with the mouse: `"1:39,2:39,3:39,5:25,5.3:25,6:c255.170,9:l,12:l"`. The original's switches follow the port's
 options: `srport --game-dir Game nomouse demo`.
 
 ## Sound

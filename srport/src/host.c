@@ -41,6 +41,10 @@ static float mouse_x, mouse_y;
 static float mouse_dx, mouse_dy;
 static float mickey_x, mickey_y;
 
+/* Developer aid SR_KEYS: scripted mouse (see host.h). */
+static bool (*pointer_query)(s16 *x, s16 *y);
+static u8 script_buttons;                   /* buttons held by the script, OR'd into host_mouse_read */
+
 static void process_events(void);
 
 bool host_init(const char *dir, int window_scale, bool fullscreen)
@@ -345,10 +349,16 @@ static void snapshot(void)
     static bool checked;
     static Uint64 last_ns;
     static int n;
-    if (!checked) { dir = SDL_getenv("SR_SNAPSHOT_DIR"); checked = true; }
+    static Uint64 interval_ns = 2 * SDL_NS_PER_SECOND;
+    if (!checked) {
+        dir = SDL_getenv("SR_SNAPSHOT_DIR");
+        const char *ms = SDL_getenv("SR_SNAPSHOT_MS");
+        if (ms && SDL_atoi(ms) > 0) interval_ns = (Uint64)SDL_atoi(ms) * SDL_NS_PER_MS;
+        checked = true;
+    }
     if (!dir) return;
     Uint64 now = SDL_GetTicksNS();
-    if (n && now - last_ns < 2 * SDL_NS_PER_SECOND) return;
+    if (n && now - last_ns < interval_ns) return;
     last_ns = now;
     SDL_Surface *s = SDL_CreateSurfaceFrom(frame_w, frame_h, SDL_PIXELFORMAT_XRGB8888, frame, frame_w * 4);
     if (!s) return;
@@ -373,17 +383,96 @@ static void present(void)
 static Uint64 last_present_ns;
 
 /* Developer aid: SR_KEYS, see host.h. */
+void host_set_pointer_query(bool (*query)(s16 *x, s16 *y)) { pointer_query = query; }
+
+/* A scripted pointer action in progress: move to (tx, ty), then optionally press and release. */
+static struct {
+    int phase;                              /* 0 idle, 1 moving, 2 pressed */
+    s16 tx, ty;
+    u8 button;                              /* 0 = move only, 1 = left, 2 = right */
+    Uint64 deadline_ns;                     /* move timeout, then the release time */
+} ptr_act;
+
+static double script_seconds(void) { return (double)(SDL_GetTicksNS() - clock_start_ns) / 1e9; }
+
+/* Returns true while an action is still running (the next script entry waits for it). */
+static bool pointer_action_step(void)
+{
+    Uint64 now = SDL_GetTicksNS();
+    if (ptr_act.phase == 1) {
+        s16 cx = 0, cy = 0;
+        bool known = pointer_query && pointer_query(&cx, &cy);
+        bool there = known && cx == ptr_act.tx && cy == ptr_act.ty;
+        if (!there && known && now < ptr_act.deadline_ns) {
+            /* Feed the difference once the game has taken the previous motion: 2 mickeys per game
+             * pixel at the driver's default ratio (the game divides by 2, DS:05EA = 1). */
+            if ((s16)mickey_x == 0 && (s16)mickey_y == 0) {
+                mickey_x += (float)(ptr_act.tx - cx) * 2.0f;
+                mickey_y += (float)(ptr_act.ty - cy) * 2.0f;
+            }
+            return true;
+        }
+        if (!there)
+            fprintf(stderr, "SR_KEYS: pointer at (%d,%d), wanted (%d,%d)%s\n", cx, cy, ptr_act.tx, ptr_act.ty,
+                    known ? "" : " (no pointer query)");
+        if (!ptr_act.button) { ptr_act.phase = 0; return false; }
+        script_buttons |= ptr_act.button;
+        ptr_act.phase = 2;
+        ptr_act.deadline_ns = now + 150 * SDL_NS_PER_MS;   /* hold like a real click */
+        return true;
+    }
+    if (ptr_act.phase == 2) {
+        if (now < ptr_act.deadline_ns) return true;
+        script_buttons &= (u8)~ptr_act.button;
+        ptr_act.phase = 0;
+    }
+    return false;
+}
+
+/* Mouse entries: m<x>.<y> move, c<x>.<y> / C<x>.<y> move + left / right click, l / r click in
+ * place, lp / lr (rp / rr) hold / let go of the button. Returns the rest of the entry. */
+static const char *script_mouse(const char *p)
+{
+    char kind = *p++;
+    if (kind == 'm' || kind == 'c' || kind == 'C') {
+        char *end;
+        ptr_act.tx = (s16)SDL_strtol(p, &end, 10);
+        p = end;
+        if (*p == '.') p++;
+        ptr_act.ty = (s16)SDL_strtol(p, &end, 10);
+        p = end;
+        ptr_act.button = kind == 'm' ? 0 : kind == 'c' ? 1 : 2;
+        ptr_act.phase = 1;
+        ptr_act.deadline_ns = SDL_GetTicksNS() + 3 * SDL_NS_PER_SECOND;
+        return p;
+    }
+    u8 b = kind == 'l' ? 1 : 2;
+    if (*p == 'p') { script_buttons |= b; return p + 1; }
+    if (*p == 'r') { script_buttons &= (u8)~b; return p + 1; }
+    script_buttons |= b;                     /* click in place */
+    ptr_act.button = b;
+    ptr_act.phase = 2;
+    ptr_act.deadline_ns = SDL_GetTicksNS() + 150 * SDL_NS_PER_MS;
+    return p;
+}
+
 static void scripted_keys(void)
 {
     static const char *spec;
     static bool checked;
     if (!checked) { spec = SDL_getenv("SR_KEYS"); checked = true; }
+    if (pointer_action_step()) return;
     if (!spec || !*spec || !kbd_handler) return;
     char *end;
     double at = SDL_strtod(spec, &end);
     if (end == spec || *end != ':') { spec = NULL; return; }
-    if ((double)(SDL_GetTicksNS() - clock_start_ns) / 1e9 < at) return;
+    if (script_seconds() < at) return;
     const char *p = end + 1;
+    if (*p == 'm' || *p == 'c' || *p == 'C' || *p == 'l' || *p == 'r') {
+        p = script_mouse(p);
+        spec = *p == ',' ? p + 1 : NULL;
+        return;
+    }
     u16 keys[8];
     int n = 0;
     bool press = true, release = true;
@@ -627,7 +716,7 @@ void host_mouse_read(s16 *x, s16 *y, u8 *buttons)
     if (x) *x = (s16)(px * frame_w / VIEW_W(frame_w));
     if (y) *y = (s16)(py * frame_h / VIEW_H(frame_w));
     SDL_MouseButtonFlags b = SDL_GetMouseState(NULL, NULL);
-    if (buttons) *buttons = (u8)(((b & SDL_BUTTON_LMASK) ? 1 : 0) | ((b & SDL_BUTTON_RMASK) ? 2 : 0));
+    if (buttons) *buttons = (u8)(((b & SDL_BUTTON_LMASK) ? 1 : 0) | ((b & SDL_BUTTON_RMASK) ? 2 : 0) | script_buttons);
 }
 
 void host_mouse_motion(s16 *dx, s16 *dy)

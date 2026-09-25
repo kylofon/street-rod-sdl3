@@ -31,6 +31,27 @@ static int usage(const char *prog)
     return 2;
 }
 
+/* The program file in `dir`: SR.EXE, or SRSE.EXE (Street Rod SE, the data-disk edition: the same program
+ * with the protection skipped and CGA/Hercules switched off), whatever the case of the name. */
+static bool find_exe(const char *dir, char *path, size_t n, const char **name)
+{
+    static const char *const names[] = { SR_EXE_NAME, "SRSE.EXE" };
+    int count = 0;
+    char **entries = SDL_GlobDirectory(dir, NULL, 0, &count);
+    bool found = false;
+    for (int k = 0; k < 2 && !found; k++)
+        for (int i = 0; entries && i < count; i++)
+            if (SDL_strcasecmp(entries[i], names[k]) == 0) {
+                snprintf(path, n, "%s/%s", dir, entries[i]);
+                *name = names[k];
+                found = true;
+                break;
+            }
+    SDL_free(entries);
+    if (!found) { snprintf(path, n, "%s/%s", dir, SR_EXE_NAME); *name = SR_EXE_NAME; }
+    return found;
+}
+
 int main(int argc, char **argv)
 {
     const char *dir = "Game";
@@ -49,7 +70,8 @@ int main(int argc, char **argv)
     }
 
     char exe_path[1024];
-    snprintf(exe_path, sizeof exe_path, "%s/%s", dir, SR_EXE_NAME);
+    const char *exe_name;
+    find_exe(dir, exe_path, sizeof exe_path, &exe_name);
     char err[256];
     if (!mem_load_exe(exe_path, err, sizeof err)) {
         fprintf(stderr, "%s\n", err);
@@ -57,7 +79,7 @@ int main(int argc, char **argv)
         return 1;
     }
     if (check) {
-        printf("%s ok: image %u bytes at %04X:0000, DGROUP %04X\n", SR_EXE_NAME, mem_image_size, LOAD_SEG, DGROUP);
+        printf("%s ok: image %u bytes at %04X:0000, DGROUP %04X\n", exe_name, mem_image_size, LOAD_SEG, DGROUP);
         return 0;
     }
 

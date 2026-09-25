@@ -95,7 +95,9 @@ Release like TD2/TD3 (zip + launcher). Enhanced ideas later.
    (`datadisk/`) should work by pointing `--game-dir` at that folder, since `SRSE.EXE` differs only
    in the protection and the menu text.
 3. **Copy protection** (the car-key colour question): bypassed in the port with a `/* PORT: */` note.
-4. **Launcher**: wxWidgets like TD2 Enhanced / TD3, once the game runs.
+4. **Launcher**: wxWidgets like TD3 — done (2026-09-25, `srport/launcher`, `-DSR_LAUNCHER=ON`): game
+   folder, original or data-disk cars, the game's switches, window options.
+5. **A / Z gear keys** in races, on by default (port addition, `srport/PORTING.md`).
 
 ## TODO (parked)
 

@@ -49,8 +49,15 @@ s16 title_and_setup(void)
     drv_pal_black();
     if (DSW(DS_libs_preloaded) == 0) lib_read_dir(2);
     if (DSW(DS_demo_switch) == 0) {
-        /* PORT: copy protection 0000:2fc8 skipped (PLAN.md decision 3). SR.EXE itself jumps over the
-         * call at 0000:3a1a; the port behaves as if the question had been answered. */
+        /* PORT: copy protection 0000:2fc8 skipped (PLAN.md decision 3); the port behaves as if the
+         * question had been answered. Of what the routine leaves behind on that path only the pointer
+         * matters: it shows it (cursor_ctl(-2) at 0000:308e) and never hides it again, so the show
+         * counter DS:4733 ends one higher and the pointer is visible from the licence screen on.
+         * (SR.EXE's crack jumps over the whole call at 0000:3a1a, so there the pointer stays hidden
+         * until the garage shows it; Street Rod SE and genuine copies show it.) The rest of the passed
+         * path is redrawn by the next screens anyway: DS:8240 is already 1, and DS:8249 / the palette
+         * are set again by each screen. */
+        cursor_ctl(-2);
         cursor_ctl(-4);
     }
     track_build_all();                                /* 2645:0d48 */

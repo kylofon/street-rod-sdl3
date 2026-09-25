@@ -8,6 +8,18 @@
 
 #include "host.h"
 
+/* PORT: A / Z shift up / down during a race (not in the original, where Space, the joystick button and
+ * the left mouse button are one "shift" control and the physics picks the direction from the pedals).
+ * The key press is remembered until the next physics step takes it (race_phys_step 0000:253b). */
+static s8 shift_dir;
+
+s8 kbd_take_shift_dir(void)
+{
+    s8 d = shift_dir;
+    shift_dir = 0;
+    return d;
+}
+
 /* 0000:2c42 kbd_isr — platform.md §4.4 */
 void kbd_isr(u8 sc)
 {
@@ -22,6 +34,11 @@ void kbd_isr(u8 sc)
         return;                                           /* out 20h,20h */
     }
     if (sc == 0xFF || sc >= 0xE0) return;                 /* E0 / E1 prefixes and overruns ignored */
+    if (DSB(DS_racing) != 0 && (sc == 0x1E || sc == 0x2C || sc == 0x9E || sc == 0xAC)) {
+        if (sc == 0x1E) shift_dir = 1;                    /* PORT: A = shift up (see kbd_take_shift_dir) */
+        else if (sc == 0x2C) shift_dir = -1;              /* PORT: Z = shift down */
+        return;                                           /* consumed: no 'A' / 'Z' left in the key slot */
+    }
 
     bool make = !(sc & 0x80);
     u8 i = sc & 0x7F;

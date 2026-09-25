@@ -360,6 +360,10 @@ void race_phys_step(void)
     shift = DSB(DS_click_held) != 0 && DSB(DS_fire_prev) == 0;      /* DS:4732 rising edge */
     DSB(DS_fire_prev) = DSB(DS_click_held);
     if (DSB(DS_click_edge) != 0) { shift = 1; DSB(DS_click_edge) = 0; }   /* DS:47CD */
+    /* PORT: A / Z (kbd_take_shift_dir) is a shift event with a forced direction; wear and the
+     * transmission checks apply as to any shift. */
+    s8 shift_dir = kbd_take_shift_dir();
+    if (shift_dir) shift = 1;
 
     if (DSW(DS_demo_active) != 0 || DSW(DS_auto_drive) != 0) {    /* the computer drives */
         if ((s16)(PHS(p, PH_RPM_UP) * 4 + PHS(p, PH_RPM)) < 0x1644) {
@@ -426,13 +430,18 @@ void race_phys_step(void)
             }
             if (blow) { DSB(p + PH_RESULT) |= 0x11; race_stop_inputs(); }
         }
-        if ((brake || (PHW(p, PH_BAND) == 0 && !gas)) && PHS(p, PH_GEAR) > 0) {
+        if (shift_dir > 0) {                                          /* PORT: A */
+            if (PHS(p, PH_GEAR) < PHS(p, PH_NGEARS)) PHW(p, PH_GEAR)++;
+        } else if (shift_dir < 0) {                                   /* PORT: Z */
+            if (PHS(p, PH_GEAR) > 0) PHW(p, PH_GEAR)--;
+        } else if ((brake || (PHW(p, PH_BAND) == 0 && !gas)) && PHS(p, PH_GEAR) > 0) {
             PHW(p, PH_GEAR)--;
         } else if ((gas || (PHS(p, PH_BAND) > 0 && !brake)) && PHS(p, PH_GEAR) < PHS(p, PH_NGEARS)) {
             PHW(p, PH_GEAR)++;
         }
         if (PHW(p, PH_AUTOMATIC) != 0) {
-            if (shift) PHW(p, PH_AUTO_MODE) = PHW(p, PH_AUTO_MODE) == 1 ? 2 : 1;
+            if (shift_dir) PHW(p, PH_AUTO_MODE) = shift_dir > 0 ? 2 : 1;   /* PORT: A = D, Z = N */
+            else if (shift) PHW(p, PH_AUTO_MODE) = PHW(p, PH_AUTO_MODE) == 1 ? 2 : 1;
             if (stall || PHW(p, PH_GEAR) == 0) PHW(p, PH_AUTO_MODE) = 1;
             if (PHW(p, PH_AUTO_MODE) == 1) PHW(p, PH_GEAR) = 0;
         } else if (stall) {

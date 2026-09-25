@@ -275,3 +275,13 @@ the 0f38 UI toolkit (`game/ui.h`); hooks (`timer_callback` = `anim_tick`, `hotsp
 * Floating point (0000:3c8d, 49ed): `long double` (x87 extended, as the MSC emulator), `_ftol`
   truncation; `fild dword` of a 16-bit value with dx = 0 is an unsigned extension.
 * VGA path only: the Tandy / CGA branches of the car-picture code (and 0f38:8336) are not ported.
+
+## Port additions
+
+* **A / Z shift up / down during a race** (`kbd_isr` → `kbd_take_shift_dir`, `race_phys_step`; marked
+  PORT). The original has one shift control (Space / Ins, joystick button, left mouse button) whose
+  direction the physics picks from the pedals; that stays as it was. A and Z are consumed only while
+  racing (`DS:8ACA`), where the original ignores them (they are hot keys only on screens 7, 10, 28,
+  which are never active in a race); the press is kept until the next physics step, and it counts as
+  a normal shift for transmission wear and the "dropped transmission" check. Automatics: A = D,
+  Z = N.

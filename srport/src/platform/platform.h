@@ -79,6 +79,9 @@ void kbd_isr(u8 sc);                          /* 0000:2c42: one scan code byte (
 s16  key_read(void);                          /* 0000:2db6: read-and-clear the key slot DS:47D0 (AL, 0-extended) */
 void kbd_install(void);                       /* 0000:2dc3: host keyboard -> kbd_isr */
 void kbd_restore(void);                       /* 0000:2de2 */
+/* PORT: A / Z during a race: +1 shift up, -1 shift down, 0 none; taking it clears it. Read by the
+ * race physics step. Not in the original (Space / joystick / mouse shift picks the direction itself). */
+s8   kbd_take_shift_dir(void);
 void kbd_remap_screen(s16 screen);            /* 0000:12de: per-screen hot keys DS:579F[screen] + 'M' (never 0) */
 s16  kbd_remap_restore(s16 keep_low);         /* 0000:1391: undo 12de; returns the previous screen byte */
 void kbd_text_mode_on(s16 keep_space);        /* 0000:2c04: Backspace, ',', '.', Space become keys */

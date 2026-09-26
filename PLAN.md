@@ -84,7 +84,9 @@ platform/video → title and garage screens (the mouse-driven menus: a visible m
 newspaper, save/load → drag race → road race / town → sound. Each step checked against DOSBox
 captures of the original (`DOSBOX/`, ignored) and headless snapshots.
 
-### 6. Release, then (optionally) Street Rod Enhanced
+### 6. Release, then (optionally) Street Rod Enhanced — v0.1.0 prepared (2026-09-26)
+`release/` (ignored): `srport-v0.1.0-win64.zip` (programs, DLLs, README, LICENSE, `licenses/`),
+`RELEASE_NOTES.md`, `SHA256SUMS.txt`. Not published: no remote yet.
 Release like TD2/TD3 (zip + launcher). Enhanced ideas later.
 
 ## Decisions (2026-09-24, provisional — the user can overrule)

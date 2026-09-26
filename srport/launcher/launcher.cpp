@@ -117,7 +117,7 @@ LauncherDialog::LauncherDialog()
     carsRow->Add(new wxStaticText(sb, wxID_ANY, "&Cars:"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, gap);
     cars_ = new wxChoice(sb, wxID_ANY, wxDefaultPosition, wxSize(FromDIP(300), -1));
     cars_->Append("The original cars");
-    cars_->Append("Street Rod SE: the data disk's 25 cars");
+    cars_->Append("Street Rod SE: the data disk's 25 cars (default)");
     cars_->SetToolTip("Street Rod SE (in the game folder's datadisk folder) replaces the cars with those of the "
                       "Street Rod car data disks. It keeps its own saved games.");
     carsRow->Add(cars_, 0, wxALIGN_CENTER_VERTICAL);
@@ -132,10 +132,12 @@ LauncherDialog::LauncherDialog()
     autoDrive_->SetToolTip("The original's \"auto\" switch: the computer steers, accelerates and shifts in races.");
     noMouse_ = new wxCheckBox(sb, wxID_ANY, "&No mouse (keyboard and joystick only)");
     noMouse_->SetToolTip("The original's \"nomouse\" switch.");
-    startBox->Add(demo_, 0, wxLEFT | wxRIGHT | wxTOP, gap);
-    startBox->Add(autoDrive_, 0, wxLEFT | wxRIGHT | wxTOP, small);
-    startBox->Add(noMouse_, 0, wxALL, small);
-    startBox->AddSpacer(small);
+    // One column, indented like the rows above: the same left margin (gap) for every checkbox.
+    auto* switches = new wxBoxSizer(wxVERTICAL);
+    switches->Add(demo_);
+    switches->Add(autoDrive_, 0, wxTOP, small);
+    switches->Add(noMouse_, 0, wxTOP, small);
+    startBox->Add(switches, 0, wxALL, gap);
     cars_->Bind(wxEVT_CHOICE, [this](wxCommandEvent&) { UpdateState(); });
 
     // Options
@@ -212,7 +214,9 @@ LauncherDialog::LauncherDialog()
     wxString program = settings::GetString(SECTION, "Program", "");
     folder_->ChangeValue(dir.empty() ? DefaultGameDir() : dir);
     program_->ChangeValue(program.empty() ? DefaultProgram() : program);
-    cars_->SetSelection(settings::GetInt(SECTION, "DataDisk", 0) != 0 ? 1 : 0);
+    // The data disk's cars are the default (key "Cars": 1 = data disk, 0 = original). Launchers before
+    // 0.1.0 stored DataDisk=0 without asking; that old key is no longer read.
+    cars_->SetSelection(settings::GetInt(SECTION, "Cars", 1) != 0 ? 1 : 0);
     demo_->SetValue(settings::GetInt(SECTION, "Demo", 0) != 0);
     autoDrive_->SetValue(settings::GetInt(SECTION, "Auto", 0) != 0);
     noMouse_->SetValue(settings::GetInt(SECTION, "NoMouse", 0) != 0);
@@ -248,7 +252,6 @@ void LauncherDialog::UpdateState() {
     // The data disk choice: only when the folder has a complete datadisk folder.
     const bool diskChoice = game_.missing.empty() && !game_.dataDisk.empty();
     cars_->Enable(diskChoice);
-    if (!diskChoice && cars_->GetSelection() == 1 && !loading_) cars_->SetSelection(0);
     const bool useDisk = diskChoice && cars_->GetSelection() == 1;
     const GameFolder played = useDisk ? ReadGameFolder(game_.dataDisk) : game_;
     if (!game_.missing.empty())
@@ -259,7 +262,7 @@ void LauncherDialog::UpdateState() {
     else if (game_.se)
         carsNote_->SetLabel("This folder is Street Rod SE: its cars are the data disk's.");
     else if (game_.dataDisk.empty())
-        carsNote_->SetLabel("The data disk's cars need a datadisk folder with Street Rod SE in this folder.");
+        carsNote_->SetLabel("No datadisk folder with Street Rod SE here: the original cars are used.");
     else
         carsNote_->SetLabel(wxEmptyString);
 
@@ -317,7 +320,7 @@ void LauncherDialog::Save() {
                         wxFileName(dir).SameAs(wxFileName(DefaultGameDir())) ? wxString() : dir);
     settings::SetString(SECTION, "Program",
                         wxFileName(program).SameAs(wxFileName(DefaultProgram())) ? wxString() : program);
-    settings::SetInt(SECTION, "DataDisk", cars_->GetSelection() == 1 ? 1 : 0);
+    settings::SetInt(SECTION, "Cars", cars_->GetSelection() == 1 ? 1 : 0);
     settings::SetInt(SECTION, "Demo", demo_->GetValue() ? 1 : 0);
     settings::SetInt(SECTION, "Auto", autoDrive_->GetValue() ? 1 : 0);
     settings::SetInt(SECTION, "NoMouse", noMouse_->GetValue() ? 1 : 0);

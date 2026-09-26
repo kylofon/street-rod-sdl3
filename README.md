@@ -1,8 +1,7 @@
 # Street Rod — SDL3 port
 
 A faithful C reimplementation of *Street Rod* (1989, California Dreams / Logical Design Works), running natively
-on SDL3, in the same way as the [Test Drive (1987)](https://github.com/kylofon/test-drive-sdl3),
-[Test Drive II](https://github.com/kylofon/test-drive-2-sdl3) and Test Drive III ports. It is not an emulator:
+on SDL3. It is not an emulator:
 the original program was reverse-engineered, documented and rewritten in C, and the port reads the original
 game's files at run time. The original data is not redistributed, and you need to get it yourself.
 
@@ -10,7 +9,7 @@ game's files at run time. The original data is not redistributed, and you need t
 
 You need the files of the original DOS *Street Rod* (`SR.EXE`, `LIB1`, `LIB2`, `HOT_DATA`), and for the data
 disk cars *Street Rod SE* (`SRSE.EXE` with its own `LIB1`, `LIB2`, `HOT_DATA`) in a folder named `datadisk`
-inside it, as in the usual GOG and eXoDOS copies. They are not included.
+inside it, as in the usual GOG and eXoDOS copies. They are not included. You can get the game for free from the copyright owner here: https://www.streetrodonline.com/downloads/.
 
 1. Open the [latest release](https://github.com/kylofon/street-rod-sdl3/releases/latest) and download
    `srport-…-win64.zip`.
@@ -43,10 +42,7 @@ keys are listed under [Controls](#controls) and in the launcher.
   bay, gearbox, tyres, tune-up, paint and customising, the gas station, Bob's Drive-In with the opponents, bets
   and pink slips, drag and road races, the police and jail, breakdowns and repairs, the calendar of the summer of
   1963, saved games, the hall of fame and the ending.
-* It was checked against the original's code and with scripted test runs (title to garage, the ads and buying a
-  car, the drive to the gas station, drag and road races with crashes and results, saving and loading), not yet
-  frame by frame against the original in DOSBox, and not every screen has been played through. This is a first
-  release: please report any difference from the original in the issues.
+* This is a first release: please report any difference from the original in the issues.
 * The CGA, EGA, Tandy and Hercules graphics are not ported (see `PLAN.md`).
 
 ## The launcher

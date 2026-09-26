@@ -34,7 +34,7 @@ themselves), `nouemem` (no picture parking in video memory).
 ## Phases
 
 ### 0. Repository — done (2026-09-24)
-- `C:\Coding\StreetRod`, git `master`, no remote (GitHub later, on request).
+- `C:\Coding\StreetRod`, git `master`, remote https://github.com/kylofon/street-rod-sdl3.
 - `Game/` original data (git-ignored; the port reads it at runtime); `StrtRods/` is the untouched
   copy as received.
 - `_tools` → junction to `TestDrive1987/_tools` (Ghidra 12.1.3, JDK 21).
@@ -86,7 +86,8 @@ captures of the original (`DOSBOX/`, ignored) and headless snapshots.
 
 ### 6. Release, then (optionally) Street Rod Enhanced — v0.1.0 prepared (2026-09-26)
 `release/` (ignored): `srport-v0.1.0-win64.zip` (programs, DLLs, README, LICENSE, `licenses/`),
-`RELEASE_NOTES.md`, `SHA256SUMS.txt`. Not published: no remote yet.
+`RELEASE_NOTES.md`, `SHA256SUMS.txt`. Repository: https://github.com/kylofon/street-rod-sdl3 (public),
+tag `v0.1.0`.
 Release like TD2/TD3 (zip + launcher). Enhanced ideas later.
 
 ## Decisions (2026-09-24, provisional — the user can overrule)

@@ -12,7 +12,8 @@ You need the files of the original DOS *Street Rod* (`SR.EXE`, `LIB1`, `LIB2`, `
 disk cars *Street Rod SE* (`SRSE.EXE` with its own `LIB1`, `LIB2`, `HOT_DATA`) in a folder named `datadisk`
 inside it, as in the usual GOG and eXoDOS copies. They are not included.
 
-1. Download `srport-…-win64.zip` from the releases.
+1. Open the [latest release](https://github.com/kylofon/street-rod-sdl3/releases/latest) and download
+   `srport-…-win64.zip`.
 2. Put your original game files in a folder named `Game` (with `datadisk` inside it, if you have it).
 3. Open the zip. Copy all of its files into the folder that holds `Game`, so that `Street Rod.exe` sits next to
    `Game`:

@@ -66,6 +66,28 @@ Settings are remembered in `%APPDATA%\Street Rod\settings.ini`.
 * The folder must be writable (saved games, the hall of fame).
 * To build: CMake 3.24+, a C11 compiler and SDL 3; for the launcher a C++17 compiler and wxWidgets 3.2.
 
+## Supported game version
+
+The port supports exactly one release of the game's program, and refuses any other with "… is a different
+release of Street Rod (load image … bytes; this port needs 284048)" or "… its program is not the SR.EXE this port
+needs".
+
+* Game: *Street Rod* (California Dreams / Logical Design Works, 1989), the DOS program `SR.EXE` built with
+  Microsoft C 5.1, as in the usual GOG and eXoDOS copies and the free download from the copyright owner
+  (https://www.streetrodonline.com/downloads/). The port's notes do not record a version number; the copy it
+  was made from has the disk check bypassed, which the port does not mind (it never runs the check).
+* `SR.EXE`: 259 785 bytes, compressed with EXEPACK; unpacked, its load image is **284 048 bytes** (0x45590).
+  The port accepts the file packed or unpacked: the load image is what it checks.
+* `SRSE.EXE` (*Street Rod SE*, the 2014 fan edition with the data-disk cars, in `datadisk`) is the same program
+  with 41 bytes changed (disk check skipped, CGA/Hercules switched off) and loads as well.
+* The port's notes record no hash of these files.
+
+To see a file's hash on Windows, open a command prompt in the game folder and type
+`certutil -hashfile SR.EXE SHA1`; on Linux or macOS, `sha1sum SR.EXE`. If you report a problem, give the
+file's size and SHA-1.
+
+`srport --check --game-dir Game` says whether the program in `Game` loads, without opening a window.
+
 ## Build
 
 From the repository root, in Git Bash or an MSYS2 MinGW64 shell:
